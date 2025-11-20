@@ -14,16 +14,94 @@ export type Database = {
   }
   public: {
     Tables: {
+      checklist_audit_logs: {
+        Row: {
+          action: string
+          changes: Json | null
+          checklist_id: string | null
+          created_at: string | null
+          id: string
+          ip_address: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          changes?: Json | null
+          checklist_id?: string | null
+          created_at?: string | null
+          id?: string
+          ip_address?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          changes?: Json | null
+          checklist_id?: string | null
+          created_at?: string | null
+          id?: string
+          ip_address?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checklist_audit_logs_checklist_id_fkey"
+            columns: ["checklist_id"]
+            isOneToOne: false
+            referencedRelation: "compliance_checklists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checklist_audit_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      checklist_photo_requirements: {
+        Row: {
+          checklist_type: string
+          created_at: string | null
+          id: string
+          item_id: string
+          minimum_photos: number | null
+          photo_requirement: string
+        }
+        Insert: {
+          checklist_type: string
+          created_at?: string | null
+          id?: string
+          item_id: string
+          minimum_photos?: number | null
+          photo_requirement: string
+        }
+        Update: {
+          checklist_type?: string
+          created_at?: string | null
+          id?: string
+          item_id?: string
+          minimum_photos?: number | null
+          photo_requirement?: string
+        }
+        Relationships: []
+      }
       compliance_checklists: {
         Row: {
           checklist_date: string
           checklist_type: string
           completed_at: string | null
           completed_by: string | null
+          completion_duration_minutes: number | null
           created_at: string
           data: Json | null
+          flag_reason: string | null
+          flagged: boolean | null
           id: string
+          quality_score: string | null
+          requires_owner_review: boolean | null
           signature_data: string | null
+          started_at: string | null
           truck_id: string
         }
         Insert: {
@@ -31,10 +109,16 @@ export type Database = {
           checklist_type: string
           completed_at?: string | null
           completed_by?: string | null
+          completion_duration_minutes?: number | null
           created_at?: string
           data?: Json | null
+          flag_reason?: string | null
+          flagged?: boolean | null
           id?: string
+          quality_score?: string | null
+          requires_owner_review?: boolean | null
           signature_data?: string | null
+          started_at?: string | null
           truck_id: string
         }
         Update: {
@@ -42,10 +126,16 @@ export type Database = {
           checklist_type?: string
           completed_at?: string | null
           completed_by?: string | null
+          completion_duration_minutes?: number | null
           created_at?: string
           data?: Json | null
+          flag_reason?: string | null
+          flagged?: boolean | null
           id?: string
+          quality_score?: string | null
+          requires_owner_review?: boolean | null
           signature_data?: string | null
+          started_at?: string | null
           truck_id?: string
         }
         Relationships: [
@@ -94,6 +184,60 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      temperature_logs: {
+        Row: {
+          checklist_id: string | null
+          corrective_action: string | null
+          device_name: string
+          expected_max_f: number | null
+          expected_min_f: number | null
+          id: string
+          is_in_range: boolean | null
+          recorded_at: string | null
+          recorded_by: string | null
+          temperature_f: number
+        }
+        Insert: {
+          checklist_id?: string | null
+          corrective_action?: string | null
+          device_name: string
+          expected_max_f?: number | null
+          expected_min_f?: number | null
+          id?: string
+          is_in_range?: boolean | null
+          recorded_at?: string | null
+          recorded_by?: string | null
+          temperature_f: number
+        }
+        Update: {
+          checklist_id?: string | null
+          corrective_action?: string | null
+          device_name?: string
+          expected_max_f?: number | null
+          expected_min_f?: number | null
+          id?: string
+          is_in_range?: boolean | null
+          recorded_at?: string | null
+          recorded_by?: string | null
+          temperature_f?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "temperature_logs_checklist_id_fkey"
+            columns: ["checklist_id"]
+            isOneToOne: false
+            referencedRelation: "compliance_checklists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "temperature_logs_recorded_by_fkey"
+            columns: ["recorded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       time_entries: {
         Row: {
@@ -201,7 +345,28 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      compliance_scores: {
+        Row: {
+          checklist_date: string | null
+          completed_checklists: number | null
+          completion_percentage: number | null
+          failed_checklists: number | null
+          flagged_checklists: number | null
+          passed_checklists: number | null
+          status_color: string | null
+          total_checklists: number | null
+          truck_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compliance_checklists_truck_id_fkey"
+            columns: ["truck_id"]
+            isOneToOne: false
+            referencedRelation: "trucks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       has_role: {

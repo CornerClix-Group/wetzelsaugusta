@@ -2,6 +2,12 @@ export interface ChecklistItem {
   id: string;
   label: string;
   description?: string;
+  photoRequirement?: "optional" | "required" | "minimum";
+  minimumPhotos?: number;
+  isTemperatureLog?: boolean;
+  tempDevice?: string;
+  tempMin?: number;
+  tempMax?: number;
 }
 
 export interface ChecklistTemplate {
@@ -40,14 +46,14 @@ export const checklistTemplates: Record<string, ChecklistTemplate> = {
   },
   quality: {
     title: "Quality Inspection",
-    description: "Product quality control standards",
+    description: "Product quality control standards - Pass/Needs Improvement/Fail scoring required",
     items: [
-      { id: "appearance", label: "Pretzels meet visual appearance standards" },
+      { id: "appearance", label: "Pretzels meet visual appearance standards", photoRequirement: "required", minimumPhotos: 2 },
       { id: "texture", label: "Texture and consistency verified" },
       { id: "temperature", label: "Holding temperatures maintained properly" },
-      { id: "portion", label: "Portion sizes meet specifications" },
+      { id: "portion", label: "Portion sizes meet specifications", photoRequirement: "required", minimumPhotos: 1 },
       { id: "freshness", label: "Freshness standards maintained" },
-      { id: "packaging", label: "Packaging and presentation meets brand standards" },
+      { id: "packaging", label: "Packaging and presentation meets brand standards", photoRequirement: "required", minimumPhotos: 1 },
     ],
   },
   food_safety: {
@@ -65,14 +71,63 @@ export const checklistTemplates: Record<string, ChecklistTemplate> = {
   },
   temperature: {
     title: "Temperature Logs",
-    description: "Required temperature monitoring",
+    description: "Required temperature monitoring with automatic validation",
     items: [
-      { id: "fridge_1", label: "Refrigerator #1 temperature (must be ≤41°F)" },
-      { id: "fridge_2", label: "Refrigerator #2 temperature (must be ≤41°F)" },
-      { id: "freezer", label: "Freezer temperature (must be ≤0°F)" },
-      { id: "hot_hold", label: "Hot holding temperature (must be ≥135°F)" },
-      { id: "oven", label: "Oven temperature calibrated and accurate" },
-      { id: "pretzels", label: "Finished pretzel internal temperature verified" },
+      { 
+        id: "fridge_1", 
+        label: "Refrigerator #1 temperature", 
+        isTemperatureLog: true,
+        tempDevice: "Refrigerator #1",
+        tempMin: 33,
+        tempMax: 41,
+        photoRequirement: "optional"
+      },
+      { 
+        id: "fridge_2", 
+        label: "Refrigerator #2 temperature", 
+        isTemperatureLog: true,
+        tempDevice: "Refrigerator #2",
+        tempMin: 33,
+        tempMax: 41,
+        photoRequirement: "optional"
+      },
+      { 
+        id: "freezer", 
+        label: "Freezer temperature", 
+        isTemperatureLog: true,
+        tempDevice: "Freezer",
+        tempMin: -10,
+        tempMax: 0,
+        photoRequirement: "optional"
+      },
+      { 
+        id: "hot_hold", 
+        label: "Hot holding temperature", 
+        isTemperatureLog: true,
+        tempDevice: "Hot Holding Unit",
+        tempMin: 135,
+        tempMax: 200,
+        photoRequirement: "optional"
+      },
+      { 
+        id: "oven", 
+        label: "Oven temperature", 
+        isTemperatureLog: true,
+        tempDevice: "Oven",
+        tempMin: 350,
+        tempMax: 450,
+        photoRequirement: "optional"
+      },
+      { 
+        id: "pretzels", 
+        label: "Finished pretzel internal temperature", 
+        isTemperatureLog: true,
+        tempDevice: "Finished Pretzels",
+        tempMin: 190,
+        tempMax: 210,
+        photoRequirement: "required",
+        minimumPhotos: 1
+      },
     ],
   },
   closing: {
