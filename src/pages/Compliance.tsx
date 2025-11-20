@@ -5,9 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, CheckCircle2, AlertCircle } from "lucide-react";
+import { Plus, CheckCircle2, AlertCircle, Flag } from "lucide-react";
 import { ChecklistForm } from "@/components/compliance/ChecklistForm";
 import { ChecklistHistory } from "@/components/compliance/ChecklistHistory";
+import { ComplianceDashboard } from "@/components/compliance/ComplianceDashboard";
 
 const checklistTypes = [
   { value: "opening", label: "Opening Checklist" },
@@ -94,11 +95,16 @@ export default function Compliance() {
         </Card>
 
         {selectedTruck && (
-          <Tabs defaultValue="today" className="space-y-6">
+          <Tabs defaultValue="dashboard" className="space-y-6">
             <TabsList>
+              <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
               <TabsTrigger value="today">Today's Checklists</TabsTrigger>
               <TabsTrigger value="history">History</TabsTrigger>
             </TabsList>
+
+            <TabsContent value="dashboard">
+              <ComplianceDashboard />
+            </TabsContent>
 
             <TabsContent value="today" className="space-y-4">
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -109,11 +115,16 @@ export default function Compliance() {
                       <CardHeader>
                         <div className="flex items-center justify-between">
                           <CardTitle className="text-lg">{type.label}</CardTitle>
-                          {status === "complete" ? (
-                            <CheckCircle2 className="h-5 w-5 text-green-500" />
-                          ) : (
-                            <AlertCircle className="h-5 w-5 text-amber-500" />
-                          )}
+                          <div className="flex items-center gap-2">
+                            {status === "complete" ? (
+                              <CheckCircle2 className="h-5 w-5 text-green-500" />
+                            ) : (
+                              <AlertCircle className="h-5 w-5 text-amber-500" />
+                            )}
+                            {todaysChecklists?.find((c) => c.checklist_type === type.value)?.flagged && (
+                              <Flag className="h-5 w-5 text-red-500" />
+                            )}
+                          </div>
                         </div>
                         <CardDescription>
                           {status === "complete" ? "Completed" : "Not completed"}
