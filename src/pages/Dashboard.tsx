@@ -33,6 +33,7 @@ const menuItems = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   { title: "Time Clock", url: "/dashboard/timeclock", icon: Clock },
   { title: "Compliance", url: "/dashboard/compliance", icon: ClipboardCheck },
+  { title: "HR & Onboarding", url: "/dashboard/hr-onboarding", icon: Users },
   { title: "Trucks", url: "/dashboard/trucks", icon: Truck },
   { title: "Employees", url: "/dashboard/employees", icon: Users },
   { title: "Schedule", url: "/dashboard/schedule", icon: Calendar },
