@@ -155,6 +155,187 @@ export type Database = {
           },
         ]
       }
+      employee_documents: {
+        Row: {
+          created_at: string | null
+          document_name: string
+          document_type: string
+          document_url: string
+          expiration_date: string | null
+          id: string
+          user_id: string | null
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          document_name: string
+          document_type: string
+          document_url: string
+          expiration_date?: string | null
+          id?: string
+          user_id?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          document_name?: string
+          document_type?: string
+          document_url?: string
+          expiration_date?: string | null
+          id?: string
+          user_id?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_documents_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_documents_verified_by_fkey"
+            columns: ["verified_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employee_onboarding: {
+        Row: {
+          account_number_encrypted: string | null
+          account_type: string | null
+          additional_withholding: number | null
+          allowances: number | null
+          bank_name: string | null
+          completed_at: string | null
+          created_at: string | null
+          direct_deposit_completed: boolean | null
+          documents_completed: boolean | null
+          emergency_contact_1_name: string | null
+          emergency_contact_1_phone: string | null
+          emergency_contact_1_relationship: string | null
+          emergency_contact_2_name: string | null
+          emergency_contact_2_phone: string | null
+          emergency_contact_2_relationship: string | null
+          emergency_contacts_completed: boolean | null
+          exempt_from_withholding: boolean | null
+          filing_status: string | null
+          id: string
+          onboarding_completed: boolean | null
+          policies_completed: boolean | null
+          routing_number: string | null
+          updated_at: string | null
+          user_id: string | null
+          w4_completed: boolean | null
+        }
+        Insert: {
+          account_number_encrypted?: string | null
+          account_type?: string | null
+          additional_withholding?: number | null
+          allowances?: number | null
+          bank_name?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          direct_deposit_completed?: boolean | null
+          documents_completed?: boolean | null
+          emergency_contact_1_name?: string | null
+          emergency_contact_1_phone?: string | null
+          emergency_contact_1_relationship?: string | null
+          emergency_contact_2_name?: string | null
+          emergency_contact_2_phone?: string | null
+          emergency_contact_2_relationship?: string | null
+          emergency_contacts_completed?: boolean | null
+          exempt_from_withholding?: boolean | null
+          filing_status?: string | null
+          id?: string
+          onboarding_completed?: boolean | null
+          policies_completed?: boolean | null
+          routing_number?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          w4_completed?: boolean | null
+        }
+        Update: {
+          account_number_encrypted?: string | null
+          account_type?: string | null
+          additional_withholding?: number | null
+          allowances?: number | null
+          bank_name?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          direct_deposit_completed?: boolean | null
+          documents_completed?: boolean | null
+          emergency_contact_1_name?: string | null
+          emergency_contact_1_phone?: string | null
+          emergency_contact_1_relationship?: string | null
+          emergency_contact_2_name?: string | null
+          emergency_contact_2_phone?: string | null
+          emergency_contact_2_relationship?: string | null
+          emergency_contacts_completed?: boolean | null
+          exempt_from_withholding?: boolean | null
+          filing_status?: string | null
+          id?: string
+          onboarding_completed?: boolean | null
+          policies_completed?: boolean | null
+          routing_number?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          w4_completed?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_onboarding_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      policy_acknowledgements: {
+        Row: {
+          acknowledged_at: string | null
+          created_at: string | null
+          id: string
+          ip_address: string | null
+          policy_type: string
+          signature_data: string
+          user_id: string | null
+        }
+        Insert: {
+          acknowledged_at?: string | null
+          created_at?: string | null
+          id?: string
+          ip_address?: string | null
+          policy_type: string
+          signature_data: string
+          user_id?: string | null
+        }
+        Update: {
+          acknowledged_at?: string | null
+          created_at?: string | null
+          id?: string
+          ip_address?: string | null
+          policy_type?: string
+          signature_data?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "policy_acknowledgements_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
