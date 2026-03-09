@@ -471,6 +471,41 @@ export type Database = {
           },
         ]
       }
+      timesheet_email_recipients: {
+        Row: {
+          active: boolean | null
+          created_at: string | null
+          created_by: string | null
+          email: string
+          id: string
+          name: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          created_at?: string | null
+          created_by?: string | null
+          email: string
+          id?: string
+          name?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          created_at?: string | null
+          created_by?: string | null
+          email?: string
+          id?: string
+          name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "timesheet_email_recipients_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       trucks: {
         Row: {
           created_at: string
