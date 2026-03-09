@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
+import DashboardLayout from "./components/DashboardLayout";
 import Dashboard from "./pages/Dashboard";
 import TimeClock from "./pages/TimeClock";
 import Compliance from "./pages/Compliance";
@@ -26,14 +27,16 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/dashboard/timeclock" element={<TimeClock />} />
-          <Route path="/dashboard/compliance" element={<Compliance />} />
-          <Route path="/dashboard/hr-onboarding" element={<HROnboarding />} />
-          <Route path="/dashboard/trucks" element={<Trucks />} />
-          <Route path="/dashboard/employees" element={<Employees />} />
-          <Route path="/dashboard/schedule" element={<Schedule />} />
-          <Route path="/dashboard/settings" element={<SettingsPage />} />
+          <Route path="/dashboard" element={<DashboardLayout />}>
+            <Route index element={<Dashboard />} />
+            <Route path="timeclock" element={<TimeClock />} />
+            <Route path="compliance" element={<Compliance />} />
+            <Route path="hr-onboarding" element={<HROnboarding />} />
+            <Route path="trucks" element={<Trucks />} />
+            <Route path="employees" element={<Employees />} />
+            <Route path="schedule" element={<Schedule />} />
+            <Route path="settings" element={<SettingsPage />} />
+          </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
