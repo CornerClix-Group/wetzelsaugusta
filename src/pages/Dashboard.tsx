@@ -39,7 +39,6 @@ const menuItems = [
   { title: "Schedule", url: "/dashboard/schedule", icon: Calendar },
   { title: "Settings", url: "/dashboard/settings", icon: Settings },
 ];
-];
 
 const Dashboard = () => {
   const navigate = useNavigate();
