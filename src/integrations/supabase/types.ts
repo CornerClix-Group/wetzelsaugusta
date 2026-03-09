@@ -592,6 +592,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      set_employee_pin: {
+        Args: { _pin: string; _target_user_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       user_role:
