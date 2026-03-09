@@ -257,7 +257,7 @@ const Index = () => {
               className="text-xs text-secondary-foreground/40 hover:text-secondary-foreground/60 flex items-center gap-1 mx-auto"
             >
               <Settings className="h-3 w-3" />
-              Manager Login
+              Employee Login
             </button>
           </div>
         </div>
