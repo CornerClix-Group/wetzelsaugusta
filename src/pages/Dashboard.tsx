@@ -121,9 +121,9 @@ const Dashboard = () => {
                 {user?.email}
               </div>
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
-                className="w-full"
+                className="w-full text-sidebar-foreground hover:bg-sidebar-accent"
                 onClick={handleLogout}
               >
                 <LogOut className="mr-2 h-4 w-4" />
