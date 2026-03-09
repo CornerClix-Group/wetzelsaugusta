@@ -32,6 +32,7 @@ const App = () => (
             <Route index element={<Dashboard />} />
             <Route path="timeclock" element={<TimeClock />} />
             <Route path="compliance" element={<Compliance />} />
+            <Route path="inventory" element={<Inventory />} />
             <Route path="hr-onboarding" element={<HROnboarding />} />
             <Route path="trucks" element={<Trucks />} />
             <Route path="employees" element={<Employees />} />
