@@ -298,6 +298,209 @@ export type Database = {
           },
         ]
       }
+      inventory_categories: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+          sort_order: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+          sort_order?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          sort_order?: number | null
+        }
+        Relationships: []
+      }
+      inventory_documents: {
+        Row: {
+          created_at: string | null
+          document_name: string
+          document_type: string
+          document_url: string
+          id: string
+          parsed_data: Json | null
+          truck_id: string | null
+          uploaded_by: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          document_name: string
+          document_type?: string
+          document_url: string
+          id?: string
+          parsed_data?: Json | null
+          truck_id?: string | null
+          uploaded_by?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          document_name?: string
+          document_type?: string
+          document_url?: string
+          id?: string
+          parsed_data?: Json | null
+          truck_id?: string | null
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_documents_truck_id_fkey"
+            columns: ["truck_id"]
+            isOneToOne: false
+            referencedRelation: "trucks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_documents_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_items: {
+        Row: {
+          category_id: string | null
+          cost_per_unit: number | null
+          created_at: string | null
+          current_quantity: number
+          id: string
+          is_active: boolean | null
+          low_stock_alert_sent: boolean | null
+          name: string
+          par_level: number
+          sku: string | null
+          supplier: string | null
+          truck_id: string | null
+          unit: string
+          updated_at: string | null
+        }
+        Insert: {
+          category_id?: string | null
+          cost_per_unit?: number | null
+          created_at?: string | null
+          current_quantity?: number
+          id?: string
+          is_active?: boolean | null
+          low_stock_alert_sent?: boolean | null
+          name: string
+          par_level?: number
+          sku?: string | null
+          supplier?: string | null
+          truck_id?: string | null
+          unit?: string
+          updated_at?: string | null
+        }
+        Update: {
+          category_id?: string | null
+          cost_per_unit?: number | null
+          created_at?: string | null
+          current_quantity?: number
+          id?: string
+          is_active?: boolean | null
+          low_stock_alert_sent?: boolean | null
+          name?: string
+          par_level?: number
+          sku?: string | null
+          supplier?: string | null
+          truck_id?: string | null
+          unit?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_items_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_items_truck_id_fkey"
+            columns: ["truck_id"]
+            isOneToOne: false
+            referencedRelation: "trucks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_transactions: {
+        Row: {
+          created_at: string | null
+          document_id: string | null
+          id: string
+          item_id: string
+          notes: string | null
+          performed_by: string | null
+          quantity_after: number
+          quantity_change: number
+          transaction_type: string
+          truck_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          document_id?: string | null
+          id?: string
+          item_id: string
+          notes?: string | null
+          performed_by?: string | null
+          quantity_after: number
+          quantity_change: number
+          transaction_type: string
+          truck_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          document_id?: string | null
+          id?: string
+          item_id?: string
+          notes?: string | null
+          performed_by?: string | null
+          quantity_after?: number
+          quantity_change?: number
+          transaction_type?: string
+          truck_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_transactions_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_transactions_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_transactions_performed_by_fkey"
+            columns: ["performed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_transactions_truck_id_fkey"
+            columns: ["truck_id"]
+            isOneToOne: false
+            referencedRelation: "trucks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       policy_acknowledgements: {
         Row: {
           acknowledged_at: string | null
@@ -365,6 +568,167 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      qsce_visit_items: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_compliance_item: boolean | null
+          notes: string | null
+          photos: Json | null
+          points_awarded: number | null
+          points_possible: number
+          section_id: string
+          visit_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_compliance_item?: boolean | null
+          notes?: string | null
+          photos?: Json | null
+          points_awarded?: number | null
+          points_possible: number
+          section_id: string
+          visit_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_compliance_item?: boolean | null
+          notes?: string | null
+          photos?: Json | null
+          points_awarded?: number | null
+          points_possible?: number
+          section_id?: string
+          visit_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "qsce_visit_items_visit_id_fkey"
+            columns: ["visit_id"]
+            isOneToOne: false
+            referencedRelation: "qsce_visits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      qsce_visits: {
+        Row: {
+          action_plan_opportunities: string | null
+          action_plan_strengths: string | null
+          action_plan_tasks: Json | null
+          city_state: string | null
+          cleanliness_possible: number | null
+          cleanliness_score: number | null
+          compliance_issues: Json | null
+          created_at: string | null
+          end_time: string | null
+          evaluator_id: string | null
+          evaluator_signature: string | null
+          franchisee_email: string | null
+          franchisee_name: string | null
+          franchisee_signature: string | null
+          id: string
+          kahala_store_number: string | null
+          net_sales: string | null
+          operations_possible: number | null
+          operations_score: number | null
+          percentage: number | null
+          posted_health_score: string | null
+          service_possible: number | null
+          service_score: number | null
+          start_time: string | null
+          status: string | null
+          summary_comments: string | null
+          total_possible: number | null
+          total_score: number | null
+          truck_id: string
+          updated_at: string | null
+          visit_date: string
+        }
+        Insert: {
+          action_plan_opportunities?: string | null
+          action_plan_strengths?: string | null
+          action_plan_tasks?: Json | null
+          city_state?: string | null
+          cleanliness_possible?: number | null
+          cleanliness_score?: number | null
+          compliance_issues?: Json | null
+          created_at?: string | null
+          end_time?: string | null
+          evaluator_id?: string | null
+          evaluator_signature?: string | null
+          franchisee_email?: string | null
+          franchisee_name?: string | null
+          franchisee_signature?: string | null
+          id?: string
+          kahala_store_number?: string | null
+          net_sales?: string | null
+          operations_possible?: number | null
+          operations_score?: number | null
+          percentage?: number | null
+          posted_health_score?: string | null
+          service_possible?: number | null
+          service_score?: number | null
+          start_time?: string | null
+          status?: string | null
+          summary_comments?: string | null
+          total_possible?: number | null
+          total_score?: number | null
+          truck_id: string
+          updated_at?: string | null
+          visit_date?: string
+        }
+        Update: {
+          action_plan_opportunities?: string | null
+          action_plan_strengths?: string | null
+          action_plan_tasks?: Json | null
+          city_state?: string | null
+          cleanliness_possible?: number | null
+          cleanliness_score?: number | null
+          compliance_issues?: Json | null
+          created_at?: string | null
+          end_time?: string | null
+          evaluator_id?: string | null
+          evaluator_signature?: string | null
+          franchisee_email?: string | null
+          franchisee_name?: string | null
+          franchisee_signature?: string | null
+          id?: string
+          kahala_store_number?: string | null
+          net_sales?: string | null
+          operations_possible?: number | null
+          operations_score?: number | null
+          percentage?: number | null
+          posted_health_score?: string | null
+          service_possible?: number | null
+          service_score?: number | null
+          start_time?: string | null
+          status?: string | null
+          summary_comments?: string | null
+          total_possible?: number | null
+          total_score?: number | null
+          truck_id?: string
+          updated_at?: string | null
+          visit_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "qsce_visits_evaluator_id_fkey"
+            columns: ["evaluator_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "qsce_visits_truck_id_fkey"
+            columns: ["truck_id"]
+            isOneToOne: false
+            referencedRelation: "trucks"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       temperature_logs: {
         Row: {

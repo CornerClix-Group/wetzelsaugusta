@@ -11,6 +11,7 @@ import {
   Calendar,
   Settings,
   LogOut,
+  Package,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -32,6 +33,7 @@ const allMenuItems = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard, employeeVisible: true },
   { title: "Time Clock", url: "/dashboard/timeclock", icon: Clock, employeeVisible: true },
   { title: "Compliance", url: "/dashboard/compliance", icon: ClipboardCheck, employeeVisible: false },
+  { title: "Inventory", url: "/dashboard/inventory", icon: Package, employeeVisible: false },
   { title: "HR & Onboarding", url: "/dashboard/hr-onboarding", icon: Users, employeeVisible: false },
   { title: "Trucks", url: "/dashboard/trucks", icon: Truck, employeeVisible: false },
   { title: "Employees", url: "/dashboard/employees", icon: Users, employeeVisible: false },
