@@ -9,6 +9,7 @@ import DashboardLayout from "./components/DashboardLayout";
 import Dashboard from "./pages/Dashboard";
 import TimeClock from "./pages/TimeClock";
 import Compliance from "./pages/Compliance";
+import Inventory from "./pages/Inventory";
 import HROnboarding from "./pages/HROnboarding";
 import Trucks from "./pages/Trucks";
 import Employees from "./pages/Employees";
