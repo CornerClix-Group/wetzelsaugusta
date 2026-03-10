@@ -53,7 +53,7 @@ const Auth = () => {
         });
         
         if (error) throw error;
-        toast.success("Account created! Welcome to WetzelOps.");
+        toast.success("Account created! Welcome to Wetzels of Augusta.");
         navigate("/dashboard");
       }
     } catch (error: any) {
