@@ -95,8 +95,8 @@ serve(async (req) => {
 
     const html = `
     <div style="font-family:Arial,sans-serif;max-width:700px;margin:0 auto;">
-      <div style="background:#1e3a5f;color:white;padding:24px;border-radius:8px 8px 0 0;">
-        <h1 style="margin:0;font-size:22px;">WetzelOps Timesheet Report</h1>
+      <div style="background:#084694;color:white;padding:24px;border-radius:8px 8px 0 0;">
+        <h1 style="margin:0;font-size:22px;">Wetzels of Augusta Timesheet Report</h1>
         <p style="margin:8px 0 0;opacity:0.8;">${startFormatted} — ${endFormatted}</p>
       </div>
       <div style="border:1px solid #e5e7eb;border-top:none;border-radius:0 0 8px 8px;overflow:hidden;">
