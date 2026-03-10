@@ -112,7 +112,7 @@ const DashboardLayout = () => {
         <Sidebar className="border-r" collapsible="icon">
           <SidebarContent>
             <div className="p-6 border-b border-sidebar-border">
-              <h1 className="text-xl font-bold text-sidebar-foreground">WetzelOps</h1>
+              <h1 className="text-xl font-bold text-sidebar-foreground">Wetzels of Augusta</h1>
               <p className="text-sm text-sidebar-accent-foreground">Operations Platform</p>
             </div>
 

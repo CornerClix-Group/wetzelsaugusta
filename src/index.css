@@ -8,36 +8,38 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* Enterprise Brand Colors - Wetzel's Pretzels Theme */
-    --background: 0 0% 100%;
-    --foreground: 215 25% 27%;
+    /* Wetzel's Pretzels Official Brand Colors */
+    /* Ochre #CF7517 → HSL 30 80% 45% | Yale Blue #084694 → HSL 215 90% 31% */
+    --background: 0 0% 99%;
+    --foreground: 215 40% 20%;
     
     --card: 0 0% 100%;
-    --card-foreground: 215 25% 27%;
+    --card-foreground: 215 40% 20%;
     
     --popover: 0 0% 100%;
-    --popover-foreground: 215 25% 27%;
+    --popover-foreground: 215 40% 20%;
     
-    /* Wetzel's Pretzel Gold/Amber as primary */
-    --primary: 35 65% 65%;
+    /* Wetzel's Yale Blue as primary - authoritative, professional */
+    --primary: 215 90% 31%;
     --primary-foreground: 0 0% 100%;
     
-    /* Professional Navy for authority/headers */
-    --secondary: 215 50% 25%;
+    /* Wetzel's Ochre/Orange as secondary - warm, energetic */
+    --secondary: 30 80% 45%;
     --secondary-foreground: 0 0% 100%;
     
-    --muted: 220 13% 95%;
+    --muted: 215 15% 95%;
     --muted-foreground: 215 16% 47%;
     
-    --accent: 35 65% 65%;
-    --accent-foreground: 215 25% 27%;
+    /* Ochre accent for highlights */
+    --accent: 30 80% 45%;
+    --accent-foreground: 0 0% 100%;
     
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
     
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 35 65% 65%;
+    --border: 215 15% 90%;
+    --input: 215 15% 90%;
+    --ring: 215 90% 31%;
     
     --radius: 0.5rem;
     
@@ -47,15 +49,15 @@ All colors MUST be HSL.
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
     
-    /* Sidebar - Professional Navy Theme */
-    --sidebar-background: 215 50% 25%;
-    --sidebar-foreground: 0 0% 95%;
-    --sidebar-primary: 35 65% 65%;
-    --sidebar-primary-foreground: 215 25% 27%;
-    --sidebar-accent: 215 45% 30%;
-    --sidebar-accent-foreground: 0 0% 95%;
-    --sidebar-border: 215 40% 30%;
-    --sidebar-ring: 35 65% 65%;
+    /* Sidebar - Yale Blue Navy Theme */
+    --sidebar-background: 215 90% 31%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 30 80% 45%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 215 80% 26%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 215 70% 25%;
+    --sidebar-ring: 30 80% 45%;
     
     /* Enterprise shadows */
     --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
