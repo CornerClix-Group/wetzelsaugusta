@@ -19,7 +19,7 @@ const policies = [
   {
     type: "handbook",
     title: "Employee Handbook",
-    description: "I have read and understand the WetzelOps employee handbook and agree to comply with all policies and procedures outlined within.",
+    description: "I have read and understand the Wetzels of Augusta employee handbook and agree to comply with all policies and procedures outlined within.",
   },
   {
     type: "safety",

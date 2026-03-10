@@ -53,7 +53,7 @@ const Auth = () => {
         });
         
         if (error) throw error;
-        toast.success("Account created! Welcome to WetzelOps.");
+        toast.success("Account created! Welcome to Wetzels of Augusta.");
         navigate("/dashboard");
       }
     } catch (error: any) {
@@ -72,7 +72,7 @@ const Auth = () => {
               <Lock className="h-8 w-8 text-primary-foreground" />
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold">WetzelOps</CardTitle>
+          <CardTitle className="text-2xl font-bold">Wetzels of Augusta</CardTitle>
           <CardDescription>
             {isLogin ? "Sign in to access your dashboard" : "Create your account"}
           </CardDescription>

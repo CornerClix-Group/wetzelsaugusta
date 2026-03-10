@@ -56,7 +56,7 @@ const Dashboard = () => {
 
       <Card>
         <CardHeader>
-          <CardTitle>Welcome to WetzelOps</CardTitle>
+          <CardTitle>Welcome to Wetzels of Augusta</CardTitle>
           <CardDescription>
             Your enterprise operations platform for Wetzel's Pretzels Truck of Augusta
           </CardDescription>
