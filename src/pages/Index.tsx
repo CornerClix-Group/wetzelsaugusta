@@ -141,23 +141,23 @@ const Index = () => {
   const showingResult = !!lastAction;
 
   return (
-    <div className="min-h-screen bg-secondary flex flex-col">
+    <div className="min-h-screen bg-gradient-to-b from-primary via-primary to-[hsl(215,80%,22%)] flex flex-col">
       {/* Header */}
-      <header className="flex items-center justify-between px-6 py-5 border-b border-secondary-foreground/10">
+      <header className="flex items-center justify-between px-6 py-5 border-b border-primary-foreground/10">
         <div className="flex items-center gap-3">
-          <div className="h-11 w-11 rounded-xl bg-primary flex items-center justify-center shadow-md">
-            <Clock className="h-5 w-5 text-primary-foreground" />
+          <div className="h-11 w-11 rounded-xl bg-secondary flex items-center justify-center shadow-md">
+            <Clock className="h-5 w-5 text-secondary-foreground" />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-secondary-foreground tracking-tight">Wetzels of Augusta</h1>
-            <p className="text-xs text-secondary-foreground/50 font-medium">Time Clock Terminal</p>
+            <h1 className="text-lg font-bold text-primary-foreground tracking-tight">Wetzels of Augusta</h1>
+            <p className="text-xs text-primary-foreground/50 font-medium">Time Clock Terminal</p>
           </div>
         </div>
         <div className="text-right">
-          <p className="text-3xl font-mono font-bold text-secondary-foreground tabular-nums">
+          <p className="text-3xl font-mono font-bold text-primary-foreground tabular-nums">
             {currentTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
           </p>
-          <p className="text-xs text-secondary-foreground/50 font-medium">
+          <p className="text-xs text-primary-foreground/50 font-medium">
             {currentTime.toLocaleDateString("en-US", {
               weekday: "long",
               month: "short",
@@ -172,7 +172,7 @@ const Index = () => {
         <div className="w-full max-w-sm">
           {/* Success confirmation overlay */}
           {showingResult ? (
-            <Card className="border-0 shadow-lg overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-300">
+            <Card className="border-0 shadow-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-300">
               <CardContent className={`p-8 text-center ${
                 lastAction === "in"
                   ? "bg-[hsl(var(--success))]"
@@ -184,7 +184,7 @@ const Index = () => {
                     : "bg-secondary-foreground/10"
                 }`}>
                   {lastAction === "in" ? (
-                    <LogIn className={`h-8 w-8 ${lastAction === "in" ? "text-[hsl(var(--success-foreground))]" : "text-secondary-foreground"}`} />
+                    <LogIn className="h-8 w-8 text-[hsl(var(--success-foreground))]" />
                   ) : (
                     <LogOut className="h-8 w-8 text-secondary-foreground" />
                   )}
@@ -222,7 +222,7 @@ const Index = () => {
             <div className="space-y-6">
               {/* PIN display */}
               <div className="text-center space-y-5">
-                <p className="text-secondary-foreground/60 text-sm font-semibold tracking-widest uppercase">
+                <p className="text-primary-foreground/60 text-sm font-semibold tracking-widest uppercase">
                   Enter Your PIN
                 </p>
                 <div className="flex justify-center gap-4">
@@ -231,8 +231,8 @@ const Index = () => {
                       key={i}
                       className={`h-4 w-4 rounded-full transition-all duration-200 ${
                         i < pin.length
-                          ? "bg-primary scale-125 shadow-md"
-                          : "bg-secondary-foreground/15"
+                          ? "bg-secondary scale-125 shadow-md shadow-secondary/40"
+                          : "bg-primary-foreground/20"
                       }`}
                     />
                   ))}
@@ -246,7 +246,7 @@ const Index = () => {
                     key={num}
                     variant="ghost"
                     onClick={() => handlePinInput(num.toString())}
-                    className="h-16 text-2xl font-semibold text-secondary-foreground bg-secondary-foreground/5 hover:bg-secondary-foreground/10 hover:text-secondary-foreground rounded-xl transition-all active:scale-95"
+                    className="h-16 text-2xl font-semibold text-primary-foreground bg-primary-foreground/10 hover:bg-primary-foreground/20 hover:text-primary-foreground rounded-xl transition-all active:scale-95 border border-primary-foreground/5"
                   >
                     {num}
                   </Button>
@@ -254,21 +254,21 @@ const Index = () => {
                 <Button
                   variant="ghost"
                   onClick={clearPin}
-                  className="h-16 text-xs font-bold uppercase tracking-wider text-destructive bg-destructive/5 hover:bg-destructive/10 hover:text-destructive rounded-xl"
+                  className="h-16 text-xs font-bold uppercase tracking-wider text-red-300 bg-red-500/10 hover:bg-red-500/20 hover:text-red-200 rounded-xl border border-red-500/10"
                 >
                   Clear
                 </Button>
                 <Button
                   variant="ghost"
                   onClick={() => handlePinInput("0")}
-                  className="h-16 text-2xl font-semibold text-secondary-foreground bg-secondary-foreground/5 hover:bg-secondary-foreground/10 hover:text-secondary-foreground rounded-xl transition-all active:scale-95"
+                  className="h-16 text-2xl font-semibold text-primary-foreground bg-primary-foreground/10 hover:bg-primary-foreground/20 hover:text-primary-foreground rounded-xl transition-all active:scale-95 border border-primary-foreground/5"
                 >
                   0
                 </Button>
                 <Button
                   variant="ghost"
                   onClick={backspace}
-                  className="h-16 text-secondary-foreground/60 bg-secondary-foreground/5 hover:bg-secondary-foreground/10 rounded-xl"
+                  className="h-16 text-primary-foreground/60 bg-primary-foreground/10 hover:bg-primary-foreground/20 rounded-xl border border-primary-foreground/5"
                 >
                   <Delete className="h-5 w-5" />
                 </Button>
@@ -277,13 +277,13 @@ const Index = () => {
               {/* Submit */}
               <Button
                 size="lg"
-                className="w-full h-14 text-base font-bold rounded-xl shadow-md transition-all active:scale-[0.98]"
+                className="w-full h-14 text-base font-bold rounded-xl shadow-lg transition-all active:scale-[0.98] bg-secondary hover:bg-secondary/90 text-secondary-foreground"
                 onClick={handleSubmit}
                 disabled={pin.length !== 4 || loading}
               >
                 {loading ? (
                   <span className="flex items-center gap-2">
-                    <span className="h-4 w-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                    <span className="h-4 w-4 border-2 border-secondary-foreground/30 border-t-secondary-foreground rounded-full animate-spin" />
                     Processing...
                   </span>
                 ) : (
@@ -298,7 +298,7 @@ const Index = () => {
               <div className="text-center pt-2">
                 <button
                   onClick={() => navigate("/auth")}
-                  className="text-xs text-secondary-foreground/30 hover:text-secondary-foreground/50 transition-colors flex items-center gap-1.5 mx-auto"
+                  className="text-xs text-primary-foreground/30 hover:text-primary-foreground/50 transition-colors flex items-center gap-1.5 mx-auto"
                 >
                   <Settings className="h-3 w-3" />
                   Employee Login
