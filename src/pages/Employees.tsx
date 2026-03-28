@@ -289,6 +289,7 @@ const Employees = () => {
               <SelectContent>
                 <SelectItem value="manager">Manager</SelectItem>
                 <SelectItem value="shift_lead">Shift Lead</SelectItem>
+                <SelectItem value="business_manager">Business Manager</SelectItem>
               </SelectContent>
             </Select>
           </div>

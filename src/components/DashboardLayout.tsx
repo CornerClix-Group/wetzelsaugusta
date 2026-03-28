@@ -98,7 +98,9 @@ const DashboardLayout = () => {
 
   const menuItems = isElevated
     ? allMenuItems
-    : allMenuItems.filter((item) => item.employeeVisible);
+    : isBusinessManager
+      ? allMenuItems.filter((item) => item.businessManagerVisible)
+      : allMenuItems.filter((item) => item.employeeVisible);
 
   // Derive page title from current route
   const currentItem = allMenuItems.find((item) =>
