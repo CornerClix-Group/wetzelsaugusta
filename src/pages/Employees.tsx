@@ -115,15 +115,32 @@ const Employees = () => {
   };
 
   const handleDemote = async (emp: any) => {
-    const { error } = await supabase
-      .from("clock_employees")
-      .update({ role: "employee" })
-      .eq("id", emp.id);
-    if (error) {
-      toast.error(error.message);
-    } else {
-      toast.success(`${emp.full_name} set to employee`);
+    setSaving(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Not authenticated");
+
+      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const res = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/demote-employee`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ clock_employee_id: emp.id }),
+        }
+      );
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+
+      toast.success(data.message);
       fetchData();
+    } catch (error: any) {
+      toast.error(error.message || "Demotion failed");
+    } finally {
+      setSaving(false);
     }
   };
 
