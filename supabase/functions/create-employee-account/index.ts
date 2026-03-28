@@ -67,7 +67,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    if (!["manager", "shift_lead"].includes(role)) {
+    if (!["manager", "shift_lead", "business_manager"].includes(role)) {
       return new Response(JSON.stringify({ error: "Invalid role. Must be manager or shift_lead" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
