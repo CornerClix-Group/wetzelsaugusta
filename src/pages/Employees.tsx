@@ -258,7 +258,16 @@ const Employees = () => {
                   </div>
                 </CardHeader>
                 {isOwner && (
-                  <CardContent>
+                  <CardContent className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleResendInvite(bm)}
+                      disabled={saving}
+                    >
+                      <Mail className="h-3.5 w-3.5 mr-1" />
+                      Resend Invite
+                    </Button>
                     <Button
                       size="sm"
                       variant="destructive"
