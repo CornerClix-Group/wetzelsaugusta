@@ -86,6 +86,39 @@ export type Database = {
         }
         Relationships: []
       }
+      clock_employees: {
+        Row: {
+          created_at: string
+          full_name: string
+          id: string
+          is_active: boolean
+          linked_user_id: string | null
+          pin_code: string | null
+          role: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          full_name: string
+          id?: string
+          is_active?: boolean
+          linked_user_id?: string | null
+          pin_code?: string | null
+          role?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          full_name?: string
+          id?: string
+          is_active?: boolean
+          linked_user_id?: string | null
+          pin_code?: string | null
+          role?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       compliance_checklists: {
         Row: {
           checklist_date: string
@@ -786,6 +819,7 @@ export type Database = {
       }
       time_entries: {
         Row: {
+          clock_employee_id: string | null
           clock_in: string
           clock_in_location: string | null
           clock_out: string | null
@@ -797,6 +831,7 @@ export type Database = {
           truck_id: string | null
         }
         Insert: {
+          clock_employee_id?: string | null
           clock_in: string
           clock_in_location?: string | null
           clock_out?: string | null
@@ -808,6 +843,7 @@ export type Database = {
           truck_id?: string | null
         }
         Update: {
+          clock_employee_id?: string | null
           clock_in?: string
           clock_in_location?: string | null
           clock_out?: string | null
@@ -819,6 +855,13 @@ export type Database = {
           truck_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "time_entries_clock_employee_id_fkey"
+            columns: ["clock_employee_id"]
+            isOneToOne: false
+            referencedRelation: "clock_employees"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "time_entries_employee_id_fkey"
             columns: ["employee_id"]
