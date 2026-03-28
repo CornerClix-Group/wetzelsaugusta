@@ -196,6 +196,18 @@ const Employees = () => {
     }
   };
 
+  const handleResendInvite = async (bm: any) => {
+    setSaving(true);
+    try {
+      const data = await callEdgeFunction("resend-invite", { user_id: bm.user_id });
+      toast.success(data.message);
+    } catch (error: any) {
+      toast.error(error.message || "Failed to resend invite");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleRemoveBM = async () => {
     if (!removeBMDialog.manager) return;
     setSaving(true);
@@ -258,7 +270,16 @@ const Employees = () => {
                   </div>
                 </CardHeader>
                 {isOwner && (
-                  <CardContent>
+                  <CardContent className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleResendInvite(bm)}
+                      disabled={saving}
+                    >
+                      <Mail className="h-3.5 w-3.5 mr-1" />
+                      Resend Invite
+                    </Button>
                     <Button
                       size="sm"
                       variant="destructive"
@@ -454,7 +475,7 @@ const Employees = () => {
           <DialogHeader>
             <DialogTitle>Invite Business Manager</DialogTitle>
             <DialogDescription>
-              They'll receive a password reset link to set up their account and can then log in at the dashboard with email/password.
+              They'll receive an email invite to set up their account and can then log in at the dashboard.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
