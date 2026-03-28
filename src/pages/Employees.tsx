@@ -7,16 +7,22 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Users, KeyRound, RotateCcw, Plus, ArrowUpCircle, ArrowDownCircle, UserX } from "lucide-react";
+import { Users, RotateCcw, Plus, ArrowUpCircle, ArrowDownCircle, UserX, Trash2, Briefcase, Mail } from "lucide-react";
 import { toast } from "sonner";
 
 const Employees = () => {
   const [clockEmployees, setClockEmployees] = useState<any[]>([]);
+  const [businessManagers, setBusinessManagers] = useState<any[]>([]);
   const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
   const [addDialog, setAddDialog] = useState(false);
   const [newName, setNewName] = useState("");
   const [promoteDialog, setPromoteDialog] = useState<{ open: boolean; employee: any | null }>({ open: false, employee: null });
   const [promoteRole, setPromoteRole] = useState("manager");
+  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; employee: any | null }>({ open: false, employee: null });
+  const [inviteBMDialog, setInviteBMDialog] = useState(false);
+  const [bmName, setBmName] = useState("");
+  const [bmEmail, setBmEmail] = useState("");
+  const [removeBMDialog, setRemoveBMDialog] = useState<{ open: boolean; manager: any | null }>({ open: false, manager: null });
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -25,18 +31,52 @@ const Employees = () => {
 
   const fetchData = async () => {
     const { data: { user } } = await supabase.auth.getUser();
-    const [{ data: ce }, { data: roles }] = await Promise.all([
+    const [{ data: ce }, { data: roles }, { data: profiles }] = await Promise.all([
       supabase.from("clock_employees").select("*").order("full_name"),
       supabase.from("user_roles").select("*"),
+      supabase.from("profiles").select("*"),
     ]);
     setClockEmployees(ce || []);
+
     if (user) {
       const myRole = (roles || []).find((r: any) => r.user_id === user.id);
       setCurrentUserRole(myRole?.role || null);
     }
+
+    // Build business managers list from roles + profiles
+    const bmRoles = (roles || []).filter((r: any) => r.role === "business_manager");
+    const bms = bmRoles.map((r: any) => {
+      const profile = (profiles || []).find((p: any) => p.id === r.user_id);
+      return {
+        user_id: r.user_id,
+        full_name: profile?.full_name || "Unknown",
+        email: profile?.email || "",
+      };
+    });
+    setBusinessManagers(bms);
   };
 
   const isOwner = currentUserRole === "owner";
+
+  const callEdgeFunction = async (name: string, body: any) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error("Not authenticated");
+    const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+    const res = await fetch(
+      `https://${projectId}.supabase.co/functions/v1/${name}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify(body),
+      }
+    );
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    return data;
+  };
 
   const handleAddEmployee = async () => {
     if (!newName.trim()) return;
@@ -58,24 +98,28 @@ const Employees = () => {
       .from("clock_employees")
       .update({ pin_code: null })
       .eq("id", emp.id);
-    if (error) {
-      toast.error(error.message);
-    } else {
-      toast.success(`PIN reset for ${emp.full_name}`);
-      fetchData();
-    }
+    if (error) toast.error(error.message);
+    else { toast.success(`PIN reset for ${emp.full_name}`); fetchData(); }
   };
 
   const handleDeactivate = async (emp: any) => {
-    const { error } = await supabase
-      .from("clock_employees")
-      .update({ is_active: !emp.is_active })
-      .eq("id", emp.id);
-    if (error) {
-      toast.error(error.message);
-    } else {
+    setSaving(true);
+    try {
+      // If promoted, demote first to revoke dashboard access
+      if (emp.linked_user_id && emp.is_active) {
+        await callEdgeFunction("demote-employee", { clock_employee_id: emp.id });
+      }
+      const { error } = await supabase
+        .from("clock_employees")
+        .update({ is_active: !emp.is_active })
+        .eq("id", emp.id);
+      if (error) throw new Error(error.message);
       toast.success(`${emp.full_name} ${emp.is_active ? "deactivated" : "reactivated"}`);
       fetchData();
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -83,27 +127,10 @@ const Employees = () => {
     if (!promoteDialog.employee) return;
     setSaving(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error("Not authenticated");
-
-      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-      const res = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/create-employee-account`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({
-            clock_employee_id: promoteDialog.employee.id,
-            role: promoteRole,
-          }),
-        }
-      );
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
-
+      const data = await callEdgeFunction("create-employee-account", {
+        clock_employee_id: promoteDialog.employee.id,
+        role: promoteRole,
+      });
       toast.success(data.message);
       setPromoteDialog({ open: false, employee: null });
       fetchData();
@@ -117,28 +144,68 @@ const Employees = () => {
   const handleDemote = async (emp: any) => {
     setSaving(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error("Not authenticated");
-
-      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-      const res = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/demote-employee`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({ clock_employee_id: emp.id }),
-        }
-      );
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
-
+      const data = await callEdgeFunction("demote-employee", { clock_employee_id: emp.id });
       toast.success(data.message);
       fetchData();
     } catch (error: any) {
       toast.error(error.message || "Demotion failed");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deleteDialog.employee) return;
+    const emp = deleteDialog.employee;
+    setSaving(true);
+    try {
+      // If promoted, demote first to clean up auth account
+      if (emp.linked_user_id) {
+        await callEdgeFunction("demote-employee", { clock_employee_id: emp.id });
+      }
+      // Delete the clock_employees row
+      const { error } = await supabase.from("clock_employees").delete().eq("id", emp.id);
+      if (error) throw new Error(error.message);
+      toast.success(`${emp.full_name} deleted`);
+      setDeleteDialog({ open: false, employee: null });
+      fetchData();
+    } catch (error: any) {
+      toast.error(error.message || "Delete failed");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleInviteBM = async () => {
+    if (!bmName.trim() || !bmEmail.trim()) return;
+    setSaving(true);
+    try {
+      const data = await callEdgeFunction("invite-business-manager", {
+        full_name: bmName.trim(),
+        email: bmEmail.trim(),
+      });
+      toast.success(data.message);
+      setBmName("");
+      setBmEmail("");
+      setInviteBMDialog(false);
+      fetchData();
+    } catch (error: any) {
+      toast.error(error.message || "Invite failed");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleRemoveBM = async () => {
+    if (!removeBMDialog.manager) return;
+    setSaving(true);
+    try {
+      const data = await callEdgeFunction("demote-employee", { user_id: removeBMDialog.manager.user_id });
+      toast.success(data.message);
+      setRemoveBMDialog({ open: false, manager: null });
+      fetchData();
+    } catch (error: any) {
+      toast.error(error.message || "Remove failed");
     } finally {
       setSaving(false);
     }
@@ -149,17 +216,67 @@ const Employees = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <h2 className="text-2xl font-bold">Employees</h2>
         {isOwner && (
-          <Button onClick={() => setAddDialog(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Employee
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={() => setInviteBMDialog(true)} variant="outline">
+              <Briefcase className="h-4 w-4 mr-2" />
+              Invite Business Manager
+            </Button>
+            <Button onClick={() => setAddDialog(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Employee
+            </Button>
+          </div>
         )}
       </div>
 
+      {/* Business Managers Section */}
+      {businessManagers.length > 0 && (
+        <>
+          <h3 className="text-lg font-semibold flex items-center gap-2">
+            <Briefcase className="h-5 w-5" />
+            Business Managers
+          </h3>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {businessManagers.map((bm) => (
+              <Card key={bm.user_id}>
+                <CardHeader className="flex flex-row items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-accent/50 flex items-center justify-center">
+                    <Briefcase className="h-5 w-5 text-accent-foreground" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg">{bm.full_name}</CardTitle>
+                    <div className="flex flex-col gap-1 mt-1">
+                      <Badge variant="default">Business Manager</Badge>
+                      <span className="text-xs text-muted-foreground flex items-center gap-1">
+                        <Mail className="h-3 w-3" />
+                        {bm.email}
+                      </span>
+                    </div>
+                  </div>
+                </CardHeader>
+                {isOwner && (
+                  <CardContent>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => setRemoveBMDialog({ open: true, manager: bm })}
+                    >
+                      <Trash2 className="h-3.5 w-3.5 mr-1" />
+                      Remove
+                    </Button>
+                  </CardContent>
+                )}
+              </Card>
+            ))}
+          </div>
+        </>
+      )}
+
       {/* Active Employees */}
+      <h3 className="text-lg font-semibold">Active Employees</h3>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {activeEmployees.map((emp) => (
           <Card key={emp.id}>
@@ -169,7 +286,7 @@ const Employees = () => {
               </div>
               <div>
                 <CardTitle className="text-lg">{emp.full_name}</CardTitle>
-                <div className="flex gap-1 mt-1">
+                <div className="flex gap-1 mt-1 flex-wrap">
                   <Badge variant={emp.role === "employee" ? "secondary" : "default"}>
                     {emp.role}
                   </Badge>
@@ -209,6 +326,15 @@ const Employees = () => {
                   <UserX className="h-3.5 w-3.5 mr-1" />
                   Deactivate
                 </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="text-destructive hover:text-destructive"
+                  onClick={() => setDeleteDialog({ open: true, employee: emp })}
+                >
+                  <Trash2 className="h-3.5 w-3.5 mr-1" />
+                  Delete
+                </Button>
               </CardContent>
             )}
           </Card>
@@ -237,9 +363,18 @@ const Employees = () => {
                   </div>
                 </CardHeader>
                 {isOwner && (
-                  <CardContent>
+                  <CardContent className="flex gap-2">
                     <Button size="sm" variant="outline" onClick={() => handleDeactivate(emp)}>
                       Reactivate
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-destructive hover:text-destructive"
+                      onClick={() => setDeleteDialog({ open: true, employee: emp })}
+                    >
+                      <Trash2 className="h-3.5 w-3.5 mr-1" />
+                      Delete
                     </Button>
                   </CardContent>
                 )}
@@ -258,11 +393,7 @@ const Employees = () => {
           </DialogHeader>
           <div className="space-y-2">
             <Label>Full Name</Label>
-            <Input
-              placeholder="John Doe"
-              value={newName}
-              onChange={(e) => setNewName(e.target.value)}
-            />
+            <Input placeholder="John Doe" value={newName} onChange={(e) => setNewName(e.target.value)} />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setAddDialog(false)}>Cancel</Button>
@@ -283,9 +414,7 @@ const Employees = () => {
           <div className="space-y-2">
             <Label>Role</Label>
             <Select value={promoteRole} onValueChange={setPromoteRole}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
+              <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="manager">Manager</SelectItem>
                 <SelectItem value="shift_lead">Shift Lead</SelectItem>
@@ -295,8 +424,71 @@ const Employees = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setPromoteDialog({ open: false, employee: null })}>Cancel</Button>
-            <Button onClick={handlePromote} disabled={saving}>
-              {saving ? "Promoting..." : "Promote"}
+            <Button onClick={handlePromote} disabled={saving}>{saving ? "Promoting..." : "Promote"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialog.open} onOpenChange={(open) => setDeleteDialog({ open, employee: open ? deleteDialog.employee : null })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete {deleteDialog.employee?.full_name}?</DialogTitle>
+            <DialogDescription>
+              This will permanently remove this employee. If they have dashboard access, it will be revoked.
+              Their historical time entries will be preserved for payroll records.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialog({ open: false, employee: null })}>Cancel</Button>
+            <Button variant="destructive" onClick={handleDelete} disabled={saving}>
+              {saving ? "Deleting..." : "Delete Employee"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Invite Business Manager Dialog */}
+      <Dialog open={inviteBMDialog} onOpenChange={setInviteBMDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Invite Business Manager</DialogTitle>
+            <DialogDescription>
+              They'll receive a password reset link to set up their account and can then log in at the dashboard with email/password.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Full Name</Label>
+              <Input placeholder="Jane Smith" value={bmName} onChange={(e) => setBmName(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Email</Label>
+              <Input type="email" placeholder="jane@example.com" value={bmEmail} onChange={(e) => setBmEmail(e.target.value)} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setInviteBMDialog(false)}>Cancel</Button>
+            <Button onClick={handleInviteBM} disabled={saving || !bmName.trim() || !bmEmail.trim()}>
+              {saving ? "Inviting..." : "Send Invite"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Remove Business Manager Confirmation */}
+      <Dialog open={removeBMDialog.open} onOpenChange={(open) => setRemoveBMDialog({ open, manager: open ? removeBMDialog.manager : null })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Remove {removeBMDialog.manager?.full_name}?</DialogTitle>
+            <DialogDescription>
+              This will permanently revoke their dashboard access and delete their account.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRemoveBMDialog({ open: false, manager: null })}>Cancel</Button>
+            <Button variant="destructive" onClick={handleRemoveBM} disabled={saving}>
+              {saving ? "Removing..." : "Remove"}
             </Button>
           </DialogFooter>
         </DialogContent>
