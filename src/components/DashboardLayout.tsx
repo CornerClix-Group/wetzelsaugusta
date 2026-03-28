@@ -47,6 +47,7 @@ const DashboardLayout = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [isElevated, setIsElevated] = useState(false);
+  const [isBusinessManager, setIsBusinessManager] = useState(false);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
