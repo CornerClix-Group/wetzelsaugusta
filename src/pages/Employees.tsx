@@ -475,7 +475,7 @@ const Employees = () => {
           <DialogHeader>
             <DialogTitle>Invite Business Manager</DialogTitle>
             <DialogDescription>
-              They'll receive a password reset link to set up their account and can then log in at the dashboard with email/password.
+              They'll receive an email invite to set up their account and can then log in at the dashboard.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">

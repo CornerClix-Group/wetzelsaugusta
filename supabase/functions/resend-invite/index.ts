@@ -47,55 +47,38 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (!callerRole) {
-      return new Response(JSON.stringify({ error: "Only owners can invite business managers" }), {
+      return new Response(JSON.stringify({ error: "Only owners can resend invites" }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const { full_name, email } = await req.json();
+    const { user_id } = await req.json();
 
-    if (!full_name?.trim() || !email?.trim()) {
-      return new Response(JSON.stringify({ error: "Name and email are required" }), {
+    if (!user_id) {
+      return new Response(JSON.stringify({ error: "user_id is required" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Check if email already exists
-    const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
-    const existing = existingUsers?.users?.find(
-      (u: any) => u.email?.toLowerCase() === email.trim().toLowerCase()
-    );
-    if (existing) {
-      return new Response(JSON.stringify({ error: "An account with this email already exists" }), {
-        status: 409,
+    // Look up user email
+    const { data: userData, error: userError } = await supabaseAdmin.auth.admin.getUserById(user_id);
+    if (userError || !userData?.user?.email) {
+      return new Response(JSON.stringify({ error: "User not found" }), {
+        status: 404,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Invite user by email — sends a real invite email with magic link
-    const { data: inviteData, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(
-      email.trim(),
-      { data: { full_name: full_name.trim() } }
+    // Resend invite
+    const { error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(
+      userData.user.email,
+      { data: userData.user.user_metadata }
     );
 
-    if (inviteError || !inviteData?.user) {
-      return new Response(JSON.stringify({ error: inviteError?.message || "Failed to send invite" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    // Assign business_manager role
-    const { error: roleError } = await supabaseAdmin
-      .from("user_roles")
-      .insert({ user_id: inviteData.user.id, role: "business_manager" });
-
-    if (roleError) {
-      // Clean up the created user
-      await supabaseAdmin.auth.admin.deleteUser(inviteData.user.id);
-      return new Response(JSON.stringify({ error: "Failed to assign role: " + roleError.message }), {
+    if (inviteError) {
+      return new Response(JSON.stringify({ error: inviteError.message }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -103,7 +86,7 @@ Deno.serve(async (req) => {
 
     return new Response(JSON.stringify({
       success: true,
-      message: `Invite sent to ${email.trim()}. They'll receive an email to set up their account.`,
+      message: `Invite resent to ${userData.user.email}`,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
