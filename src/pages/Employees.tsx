@@ -196,6 +196,18 @@ const Employees = () => {
     }
   };
 
+  const handleResendInvite = async (bm: any) => {
+    setSaving(true);
+    try {
+      const data = await callEdgeFunction("resend-invite", { user_id: bm.user_id });
+      toast.success(data.message);
+    } catch (error: any) {
+      toast.error(error.message || "Failed to resend invite");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleRemoveBM = async () => {
     if (!removeBMDialog.manager) return;
     setSaving(true);
