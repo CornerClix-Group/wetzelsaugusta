@@ -30,15 +30,15 @@ import { NavLink } from "@/components/NavLink";
 import { toast } from "sonner";
 
 const allMenuItems = [
-  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard, employeeVisible: true },
-  { title: "Time Clock", url: "/dashboard/timeclock", icon: Clock, employeeVisible: true },
-  { title: "Compliance", url: "/dashboard/compliance", icon: ClipboardCheck, employeeVisible: false },
-  { title: "Inventory", url: "/dashboard/inventory", icon: Package, employeeVisible: false },
-  { title: "HR & Onboarding", url: "/dashboard/hr-onboarding", icon: Users, employeeVisible: false },
-  { title: "Trucks", url: "/dashboard/trucks", icon: Truck, employeeVisible: false },
-  { title: "Employees", url: "/dashboard/employees", icon: Users, employeeVisible: false },
-  { title: "Schedule", url: "/dashboard/schedule", icon: Calendar, employeeVisible: true },
-  { title: "Settings", url: "/dashboard/settings", icon: Settings, employeeVisible: true },
+  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard, employeeVisible: true, businessManagerVisible: true },
+  { title: "Time Clock", url: "/dashboard/timeclock", icon: Clock, employeeVisible: true, businessManagerVisible: true },
+  { title: "Compliance", url: "/dashboard/compliance", icon: ClipboardCheck, employeeVisible: false, businessManagerVisible: false },
+  { title: "Inventory", url: "/dashboard/inventory", icon: Package, employeeVisible: false, businessManagerVisible: false },
+  { title: "HR & Onboarding", url: "/dashboard/hr-onboarding", icon: Users, employeeVisible: false, businessManagerVisible: true },
+  { title: "Trucks", url: "/dashboard/trucks", icon: Truck, employeeVisible: false, businessManagerVisible: false },
+  { title: "Employees", url: "/dashboard/employees", icon: Users, employeeVisible: false, businessManagerVisible: false },
+  { title: "Schedule", url: "/dashboard/schedule", icon: Calendar, employeeVisible: true, businessManagerVisible: false },
+  { title: "Settings", url: "/dashboard/settings", icon: Settings, employeeVisible: true, businessManagerVisible: true },
 ];
 
 const DashboardLayout = () => {
