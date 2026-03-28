@@ -73,9 +73,7 @@ const Auth = () => {
             </div>
           </div>
           <CardTitle className="text-2xl font-bold">Wetzels of Augusta</CardTitle>
-          <CardDescription>
-            {isLogin ? "Sign in to access your dashboard" : "Create your account"}
-          </CardDescription>
+          <CardDescription>Owner sign-in</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleAuth} className="space-y-4">
