@@ -78,6 +78,7 @@ const DashboardLayout = () => {
           roles.includes("manager") ||
           roles.includes("shift_lead")
         );
+        setIsBusinessManager(roles.includes("business_manager"));
       });
   }, [user]);
 
