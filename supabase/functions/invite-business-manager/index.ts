@@ -47,92 +47,73 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (!callerRole) {
-      return new Response(JSON.stringify({ error: "Only owners can demote employees" }), {
+      return new Response(JSON.stringify({ error: "Only owners can invite business managers" }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const body = await req.json();
+    const { full_name, email } = await req.json();
 
-    // Support both clock employee demotion and business manager removal
-    if (body.user_id) {
-      // Remove a business manager (direct auth user, not a clock employee)
-      const { data: profile } = await supabaseAdmin
-        .from("profiles")
-        .select("full_name")
-        .eq("id", body.user_id)
-        .single();
-
-      await supabaseAdmin
-        .from("user_roles")
-        .delete()
-        .eq("user_id", body.user_id);
-
-      await supabaseAdmin.auth.admin.deleteUser(body.user_id);
-
-      return new Response(JSON.stringify({
-        success: true,
-        message: `${profile?.full_name || "User"} removed`,
-      }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const { clock_employee_id } = body;
-
-    if (!clock_employee_id) {
-      return new Response(JSON.stringify({ error: "Missing clock_employee_id or user_id" }), {
+    if (!full_name?.trim() || !email?.trim()) {
+      return new Response(JSON.stringify({ error: "Name and email are required" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Get the clock employee
-    const { data: employee, error: empError } = await supabaseAdmin
-      .from("clock_employees")
-      .select("*")
-      .eq("id", clock_employee_id)
-      .single();
-
-    if (empError || !employee) {
-      return new Response(JSON.stringify({ error: "Employee not found" }), {
-        status: 404,
+    // Check if email already exists
+    const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
+    const existing = existingUsers?.users?.find(
+      (u: any) => u.email?.toLowerCase() === email.trim().toLowerCase()
+    );
+    if (existing) {
+      return new Response(JSON.stringify({ error: "An account with this email already exists" }), {
+        status: 409,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // If already a basic employee with no linked user, just return success
-    if (employee.role === "employee" && !employee.linked_user_id) {
-      return new Response(JSON.stringify({
-        success: true,
-        message: `${employee.full_name} is already a clock-only employee`,
-      }), {
+    // Create user with a random password (they'll reset it)
+    const randomPassword = crypto.randomUUID() + "Aa1!";
+    const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
+      email: email.trim(),
+      password: randomPassword,
+      email_confirm: true,
+      user_metadata: { full_name: full_name.trim() },
+    });
+
+    if (createError || !newUser?.user) {
+      return new Response(JSON.stringify({ error: createError?.message || "Failed to create account" }), {
+        status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const linkedUserId = employee.linked_user_id;
+    // Assign business_manager role
+    const { error: roleError } = await supabaseAdmin
+      .from("user_roles")
+      .insert({ user_id: newUser.user.id, role: "business_manager" });
 
-    // Remove user_roles entry and delete auth user
-    if (linkedUserId) {
-      await supabaseAdmin
-        .from("user_roles")
-        .delete()
-        .eq("user_id", linkedUserId);
-
-      await supabaseAdmin.auth.admin.deleteUser(linkedUserId);
+    if (roleError) {
+      // Clean up the created user
+      await supabaseAdmin.auth.admin.deleteUser(newUser.user.id);
+      return new Response(JSON.stringify({ error: "Failed to assign role: " + roleError.message }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    // Reset clock_employees to basic employee
-    await supabaseAdmin
-      .from("clock_employees")
-      .update({ role: "employee", linked_user_id: null })
-      .eq("id", clock_employee_id);
+    // Generate a password recovery link so they can set their own password
+    const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
+      type: "recovery",
+      email: email.trim(),
+    });
 
     return new Response(JSON.stringify({
       success: true,
-      message: `${employee.full_name} demoted to clock-only employee`,
+      message: `${full_name.trim()} invited as Business Manager. They'll receive a password reset email to set up their account.`,
+      recovery_link: linkData?.properties?.action_link || null,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
