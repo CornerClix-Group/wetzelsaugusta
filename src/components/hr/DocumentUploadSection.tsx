@@ -12,9 +12,10 @@ import { Upload, FileText, CheckCircle2, Calendar, X } from "lucide-react";
 interface DocumentUploadSectionProps {
   userId: string;
   onComplete: () => void;
+  clockEmployeeId?: string | null;
 }
 
-export function DocumentUploadSection({ userId, onComplete }: DocumentUploadSectionProps) {
+export function DocumentUploadSection({ userId, onComplete, clockEmployeeId }: DocumentUploadSectionProps) {
   const queryClient = useQueryClient();
   const [uploading, setUploading] = useState(false);
 
