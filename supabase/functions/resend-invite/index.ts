@@ -71,14 +71,14 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Resend invite
-    const { error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(
-      userData.user.email,
-      { data: userData.user.user_metadata }
-    );
+    // Generate a new invite/magic link for the existing user
+    const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
+      type: "magiclink",
+      email: userData.user.email,
+    });
 
-    if (inviteError) {
-      return new Response(JSON.stringify({ error: inviteError.message }), {
+    if (linkError) {
+      return new Response(JSON.stringify({ error: linkError.message }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
