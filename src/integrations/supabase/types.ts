@@ -246,6 +246,7 @@ export type Database = {
           additional_withholding: number | null
           allowances: number | null
           bank_name: string | null
+          clock_employee_id: string | null
           completed_at: string | null
           created_at: string | null
           direct_deposit_completed: boolean | null
@@ -273,6 +274,7 @@ export type Database = {
           additional_withholding?: number | null
           allowances?: number | null
           bank_name?: string | null
+          clock_employee_id?: string | null
           completed_at?: string | null
           created_at?: string | null
           direct_deposit_completed?: boolean | null
@@ -300,6 +302,7 @@ export type Database = {
           additional_withholding?: number | null
           allowances?: number | null
           bank_name?: string | null
+          clock_employee_id?: string | null
           completed_at?: string | null
           created_at?: string | null
           direct_deposit_completed?: boolean | null
@@ -322,6 +325,13 @@ export type Database = {
           w4_completed?: boolean | null
         }
         Relationships: [
+          {
+            foreignKeyName: "employee_onboarding_clock_employee_id_fkey"
+            columns: ["clock_employee_id"]
+            isOneToOne: false
+            referencedRelation: "clock_employees"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "employee_onboarding_user_id_fkey"
             columns: ["user_id"]
