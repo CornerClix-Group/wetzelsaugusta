@@ -282,7 +282,7 @@ const Index = () => {
                     onClick={() => handleSelectEmployee(emp)}
                     className="w-full text-left px-5 py-4 rounded-xl bg-primary-foreground/10 hover:bg-primary-foreground/20 active:scale-[0.98] transition-all border border-primary-foreground/5 flex items-center justify-between group"
                   >
-                    <span className="text-primary-foreground font-semibold text-base">{emp.full_name}</span>
+                    <span className="text-primary-foreground font-semibold text-base">{emp.display_name || emp.full_name}</span>
                     <ArrowRight className="h-4 w-4 text-primary-foreground/30 group-hover:text-primary-foreground/60 transition-colors" />
                   </button>
                 ))}
