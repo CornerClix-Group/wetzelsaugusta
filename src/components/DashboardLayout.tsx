@@ -30,15 +30,15 @@ import { NavLink } from "@/components/NavLink";
 import { toast } from "sonner";
 
 const allMenuItems = [
-  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard, employeeVisible: true, businessManagerVisible: true },
-  { title: "Time Clock", url: "/dashboard/timeclock", icon: Clock, employeeVisible: true, businessManagerVisible: true },
-  { title: "Compliance", url: "/dashboard/compliance", icon: ClipboardCheck, employeeVisible: false, businessManagerVisible: false },
-  { title: "Inventory", url: "/dashboard/inventory", icon: Package, employeeVisible: false, businessManagerVisible: false },
-  { title: "HR & Onboarding", url: "/dashboard/hr-onboarding", icon: Users, employeeVisible: false, businessManagerVisible: true },
-  { title: "Trucks", url: "/dashboard/trucks", icon: Truck, employeeVisible: false, businessManagerVisible: false },
-  { title: "Employees", url: "/dashboard/employees", icon: Users, employeeVisible: false, businessManagerVisible: false },
-  { title: "Schedule", url: "/dashboard/schedule", icon: Calendar, employeeVisible: true, businessManagerVisible: false },
-  { title: "Settings", url: "/dashboard/settings", icon: Settings, employeeVisible: true, businessManagerVisible: true },
+  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard, permissionKey: null, alwaysVisible: true },
+  { title: "Time Clock", url: "/dashboard/timeclock", icon: Clock, permissionKey: null, alwaysVisible: true },
+  { title: "Compliance", url: "/dashboard/compliance", icon: ClipboardCheck, permissionKey: "compliance", alwaysVisible: false },
+  { title: "Inventory", url: "/dashboard/inventory", icon: Package, permissionKey: "inventory", alwaysVisible: false },
+  { title: "HR & Onboarding", url: "/dashboard/hr-onboarding", icon: Users, permissionKey: "hr_onboarding", alwaysVisible: false },
+  { title: "Trucks", url: "/dashboard/trucks", icon: Truck, permissionKey: "trucks", alwaysVisible: false },
+  { title: "Employees", url: "/dashboard/employees", icon: Users, permissionKey: "employees", alwaysVisible: false },
+  { title: "Schedule", url: "/dashboard/schedule", icon: Calendar, permissionKey: "schedule", alwaysVisible: false },
+  { title: "Settings", url: "/dashboard/settings", icon: Settings, permissionKey: null, alwaysVisible: true },
 ];
 
 const DashboardLayout = () => {
@@ -48,6 +48,7 @@ const DashboardLayout = () => {
   const [loading, setLoading] = useState(true);
   const [isElevated, setIsElevated] = useState(false);
   const [isBusinessManager, setIsBusinessManager] = useState(false);
+  const [grantedPermissions, setGrantedPermissions] = useState<string[]>([]);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -66,20 +67,43 @@ const DashboardLayout = () => {
 
   useEffect(() => {
     if (!user) return;
-    supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", user.id)
-      .then(({ data }) => {
-        const roles = data?.map((r) => r.role) ?? [];
-        setIsElevated(
-          roles.includes("owner") ||
-          roles.includes("franchise_owner") ||
-          roles.includes("manager") ||
-          roles.includes("shift_lead")
-        );
-        setIsBusinessManager(roles.includes("business_manager"));
-      });
+
+    const fetchRolesAndPermissions = async () => {
+      // Fetch roles
+      const { data: rolesData } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id);
+
+      const roles = rolesData?.map((r) => r.role) ?? [];
+      const elevated = roles.includes("owner") || roles.includes("franchise_owner") || roles.includes("manager") || roles.includes("shift_lead");
+      setIsElevated(elevated);
+      setIsBusinessManager(roles.includes("business_manager"));
+
+      // If not owner/franchise_owner, check individual permissions via linked clock_employee
+      if (!roles.includes("owner") && !roles.includes("franchise_owner")) {
+        const { data: clockEmp } = await supabase
+          .from("clock_employees")
+          .select("id")
+          .eq("linked_user_id", user.id)
+          .maybeSingle();
+
+        if (clockEmp) {
+          const { data: perms } = await supabase
+            .from("employee_permissions")
+            .select("permission, granted")
+            .eq("clock_employee_id", clockEmp.id)
+            .eq("granted", true);
+
+          setGrantedPermissions((perms || []).map((p) => p.permission));
+        }
+      } else {
+        // Owners see everything
+        setGrantedPermissions([]);
+      }
+    };
+
+    fetchRolesAndPermissions();
   }, [user]);
 
   const handleLogout = async () => {
@@ -96,11 +120,23 @@ const DashboardLayout = () => {
     );
   }
 
-  const menuItems = isElevated
-    ? allMenuItems
-    : isBusinessManager
-      ? allMenuItems.filter((item) => item.businessManagerVisible)
-      : allMenuItems.filter((item) => item.employeeVisible);
+  // Build visible menu items
+  const menuItems = allMenuItems.filter((item) => {
+    // Always-visible items (Dashboard, Time Clock, Settings)
+    if (item.alwaysVisible) return true;
+
+    // Owners/franchise owners see everything
+    if (isElevated && (grantedPermissions.length === 0)) return true;
+
+    // For non-owner elevated roles (manager, shift_lead) and business managers,
+    // check individual permissions
+    if (item.permissionKey && grantedPermissions.includes(item.permissionKey)) return true;
+
+    // Business managers always see HR & Onboarding
+    if (isBusinessManager && item.permissionKey === "hr_onboarding") return true;
+
+    return false;
+  });
 
   // Derive page title from current route
   const currentItem = allMenuItems.find((item) =>

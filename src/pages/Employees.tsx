@@ -6,10 +6,20 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Users, RotateCcw, Plus, ArrowUpCircle, ArrowDownCircle, UserX, Trash2, Briefcase, Mail, FileText, Send } from "lucide-react";
+import { Users, RotateCcw, Plus, ArrowUpCircle, ArrowDownCircle, UserX, Trash2, Briefcase, Mail, FileText, Send, Pencil, Shield } from "lucide-react";
 import { toast } from "sonner";
+
+const PERMISSION_MODULES = [
+  { key: "compliance", label: "Compliance" },
+  { key: "inventory", label: "Inventory" },
+  { key: "trucks", label: "Trucks" },
+  { key: "hr_onboarding", label: "HR & Onboarding" },
+  { key: "employees", label: "Employees" },
+  { key: "schedule", label: "Schedule" },
+];
 
 const Employees = () => {
   const navigate = useNavigate();
@@ -20,6 +30,7 @@ const Employees = () => {
   const [hrInviteDialog, setHrInviteDialog] = useState<{ open: boolean; employee: any | null }>({ open: false, employee: null });
   const [hrInviteEmail, setHrInviteEmail] = useState("");
   const [newName, setNewName] = useState("");
+  const [newDisplayName, setNewDisplayName] = useState("");
   const [promoteDialog, setPromoteDialog] = useState<{ open: boolean; employee: any | null }>({ open: false, employee: null });
   const [promoteRole, setPromoteRole] = useState("manager");
   const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; employee: any | null }>({ open: false, employee: null });
@@ -28,6 +39,15 @@ const Employees = () => {
   const [bmEmail, setBmEmail] = useState("");
   const [removeBMDialog, setRemoveBMDialog] = useState<{ open: boolean; manager: any | null }>({ open: false, manager: null });
   const [saving, setSaving] = useState(false);
+
+  // Edit employee dialog
+  const [editDialog, setEditDialog] = useState<{ open: boolean; employee: any | null }>({ open: false, employee: null });
+  const [editFullName, setEditFullName] = useState("");
+  const [editDisplayName, setEditDisplayName] = useState("");
+
+  // Permissions dialog
+  const [permDialog, setPermDialog] = useState<{ open: boolean; employee: any | null }>({ open: false, employee: null });
+  const [permToggles, setPermToggles] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     fetchData();
@@ -47,7 +67,6 @@ const Employees = () => {
       setCurrentUserRole(myRole?.role || null);
     }
 
-    // Build business managers list from roles + profiles
     const bmRoles = (roles || []).filter((r: any) => r.role === "business_manager");
     const bms = bmRoles.map((r: any) => {
       const profile = (profiles || []).find((p: any) => p.id === r.user_id);
@@ -85,16 +104,81 @@ const Employees = () => {
   const handleAddEmployee = async () => {
     if (!newName.trim()) return;
     setSaving(true);
-    const { error } = await supabase.from("clock_employees").insert({ full_name: newName.trim() });
+    const { error } = await supabase.from("clock_employees").insert({
+      full_name: newName.trim(),
+      display_name: newDisplayName.trim() || null,
+    });
     setSaving(false);
     if (error) {
       toast.error(error.message);
     } else {
       toast.success(`${newName.trim()} added`);
       setNewName("");
+      setNewDisplayName("");
       setAddDialog(false);
       fetchData();
     }
+  };
+
+  const handleEditEmployee = async () => {
+    if (!editDialog.employee || !editFullName.trim()) return;
+    setSaving(true);
+    const { error } = await supabase
+      .from("clock_employees")
+      .update({
+        full_name: editFullName.trim(),
+        display_name: editDisplayName.trim() || null,
+      })
+      .eq("id", editDialog.employee.id);
+    setSaving(false);
+    if (error) {
+      toast.error(error.message);
+    } else {
+      toast.success("Employee updated");
+      setEditDialog({ open: false, employee: null });
+      fetchData();
+    }
+  };
+
+  const openPermDialog = async (emp: any) => {
+    // Fetch existing permissions for this employee
+    const { data } = await supabase
+      .from("employee_permissions")
+      .select("permission, granted")
+      .eq("clock_employee_id", emp.id);
+
+    const toggles: Record<string, boolean> = {};
+    PERMISSION_MODULES.forEach((m) => {
+      const found = (data || []).find((p: any) => p.permission === m.key);
+      toggles[m.key] = found?.granted ?? false;
+    });
+    setPermToggles(toggles);
+    setPermDialog({ open: true, employee: emp });
+  };
+
+  const handleSavePermissions = async () => {
+    if (!permDialog.employee) return;
+    setSaving(true);
+    const { data: { user } } = await supabase.auth.getUser();
+
+    for (const mod of PERMISSION_MODULES) {
+      await supabase
+        .from("employee_permissions")
+        .upsert(
+          {
+            clock_employee_id: permDialog.employee.id,
+            permission: mod.key,
+            granted: permToggles[mod.key] ?? false,
+            granted_by: user?.id,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "clock_employee_id,permission" }
+        );
+    }
+
+    setSaving(false);
+    toast.success("Permissions saved");
+    setPermDialog({ open: false, employee: null });
   };
 
   const handleResetPin = async (emp: any) => {
@@ -109,7 +193,6 @@ const Employees = () => {
   const handleDeactivate = async (emp: any) => {
     setSaving(true);
     try {
-      // If promoted, demote first to revoke dashboard access
       if (emp.linked_user_id && emp.is_active) {
         await callEdgeFunction("demote-employee", { clock_employee_id: emp.id });
       }
@@ -163,11 +246,9 @@ const Employees = () => {
     const emp = deleteDialog.employee;
     setSaving(true);
     try {
-      // If promoted, demote first to clean up auth account
       if (emp.linked_user_id) {
         await callEdgeFunction("demote-employee", { clock_employee_id: emp.id });
       }
-      // Delete the clock_employees row
       const { error } = await supabase.from("clock_employees").delete().eq("id", emp.id);
       if (error) throw new Error(error.message);
       toast.success(`${emp.full_name} deleted`);
@@ -240,7 +321,7 @@ const Employees = () => {
               <Briefcase className="h-4 w-4 mr-2" />
               Invite Business Manager
             </Button>
-            <Button onClick={() => setAddDialog(true)}>
+            <Button onClick={() => { setAddDialog(true); setNewName(""); setNewDisplayName(""); }}>
               <Plus className="h-4 w-4 mr-2" />
               Add Employee
             </Button>
@@ -275,20 +356,11 @@ const Employees = () => {
                 </CardHeader>
                 {isOwner && (
                   <CardContent className="flex gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleResendInvite(bm)}
-                      disabled={saving}
-                    >
+                    <Button size="sm" variant="outline" onClick={() => handleResendInvite(bm)} disabled={saving}>
                       <Mail className="h-3.5 w-3.5 mr-1" />
                       Resend Invite
                     </Button>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={() => setRemoveBMDialog({ open: true, manager: bm })}
-                    >
+                    <Button size="sm" variant="destructive" onClick={() => setRemoveBMDialog({ open: true, manager: bm })}>
                       <Trash2 className="h-3.5 w-3.5 mr-1" />
                       Remove
                     </Button>
@@ -311,6 +383,9 @@ const Employees = () => {
               </div>
               <div>
                 <CardTitle className="text-lg">{emp.full_name}</CardTitle>
+                {emp.display_name && (
+                  <p className="text-xs text-muted-foreground">Display: {emp.display_name}</p>
+                )}
                 <div className="flex gap-1 mt-1 flex-wrap">
                   <Badge variant={emp.role === "employee" ? "secondary" : "default"}>
                     {emp.role}
@@ -322,6 +397,26 @@ const Employees = () => {
             </CardHeader>
             {isOwner && (
               <CardContent className="flex flex-wrap gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setEditDialog({ open: true, employee: emp });
+                    setEditFullName(emp.full_name);
+                    setEditDisplayName(emp.display_name || "");
+                  }}
+                >
+                  <Pencil className="h-3.5 w-3.5 mr-1" />
+                  Edit
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => openPermDialog(emp)}
+                >
+                  <Shield className="h-3.5 w-3.5 mr-1" />
+                  Permissions
+                </Button>
                 {emp.pin_code && (
                   <Button size="sm" variant="outline" onClick={() => handleResetPin(emp)}>
                     <RotateCcw className="h-3.5 w-3.5 mr-1" />
@@ -435,13 +530,79 @@ const Employees = () => {
             <DialogTitle>Add Employee</DialogTitle>
             <DialogDescription>Enter the employee's name. They'll set their PIN on the terminal.</DialogDescription>
           </DialogHeader>
-          <div className="space-y-2">
-            <Label>Full Name</Label>
-            <Input placeholder="John Doe" value={newName} onChange={(e) => setNewName(e.target.value)} />
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Full Name (legal/payroll)</Label>
+              <Input placeholder="John Doe" value={newName} onChange={(e) => setNewName(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Display Name (shown on terminal)</Label>
+              <Input placeholder="John" value={newDisplayName} onChange={(e) => setNewDisplayName(e.target.value)} />
+              <p className="text-xs text-muted-foreground">Optional — defaults to full name if left blank</p>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setAddDialog(false)}>Cancel</Button>
             <Button onClick={handleAddEmployee} disabled={saving || !newName.trim()}>Add</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Employee Dialog */}
+      <Dialog open={editDialog.open} onOpenChange={(open) => setEditDialog({ open, employee: open ? editDialog.employee : null })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit {editDialog.employee?.full_name}</DialogTitle>
+            <DialogDescription>Update the employee's name details.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Full Name (legal/payroll)</Label>
+              <Input value={editFullName} onChange={(e) => setEditFullName(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Display Name (shown on terminal)</Label>
+              <Input
+                placeholder="Leave blank to use full name"
+                value={editDisplayName}
+                onChange={(e) => setEditDisplayName(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialog({ open: false, employee: null })}>Cancel</Button>
+            <Button onClick={handleEditEmployee} disabled={saving || !editFullName.trim()}>
+              {saving ? "Saving..." : "Save"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Permissions Dialog */}
+      <Dialog open={permDialog.open} onOpenChange={(open) => setPermDialog({ open, employee: open ? permDialog.employee : null })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Permissions: {permDialog.employee?.display_name || permDialog.employee?.full_name}</DialogTitle>
+            <DialogDescription>Toggle which modules this employee can access on the dashboard.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {PERMISSION_MODULES.map((mod) => (
+              <div key={mod.key} className="flex items-center justify-between">
+                <Label className="text-sm font-medium">{mod.label}</Label>
+                <Switch
+                  checked={permToggles[mod.key] ?? false}
+                  onCheckedChange={(checked) =>
+                    setPermToggles((prev) => ({ ...prev, [mod.key]: checked }))
+                  }
+                />
+              </div>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPermDialog({ open: false, employee: null })}>Cancel</Button>
+            <Button onClick={handleSavePermissions} disabled={saving}>
+              {saving ? "Saving..." : "Save"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
