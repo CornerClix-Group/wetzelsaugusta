@@ -101,16 +101,27 @@ export function PolicyAcknowledgements({ userId, onComplete, clockEmployeeId }: 
       }
 
       // Mark policies section as complete
-      const { error: updateError } = await supabase
-        .from("employee_onboarding")
-        .update({
-          policies_completed: true,
-          onboarding_completed: true,
-          completed_at: new Date().toISOString(),
-        })
-        .eq("user_id", userId);
-
-      if (updateError) throw updateError;
+      if (clockEmployeeId) {
+        const { error: updateError } = await supabase
+          .from("employee_onboarding")
+          .update({
+            policies_completed: true,
+            onboarding_completed: true,
+            completed_at: new Date().toISOString(),
+          })
+          .eq("clock_employee_id", clockEmployeeId);
+        if (updateError) throw updateError;
+      } else {
+        const { error: updateError } = await supabase
+          .from("employee_onboarding")
+          .update({
+            policies_completed: true,
+            onboarding_completed: true,
+            completed_at: new Date().toISOString(),
+          })
+          .eq("user_id", userId);
+        if (updateError) throw updateError;
+      }
 
       toast.success("Policy acknowledgements submitted successfully");
       queryClient.invalidateQueries({ queryKey: ["policy-acknowledgements"] });

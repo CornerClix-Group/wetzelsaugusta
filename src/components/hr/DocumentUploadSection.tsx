@@ -108,12 +108,33 @@ export function DocumentUploadSection({ userId, onComplete, clockEmployeeId }: D
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) throw new Error("Not authenticated");
 
-      const { error } = await supabase
-        .from("employee_onboarding")
-        .update({ documents_completed: true })
-        .eq("user_id", userData.user.id);
+      if (clockEmployeeId) {
+        // Update by clock_employee_id for on-behalf mode
+        const { data: existing } = await supabase
+          .from("employee_onboarding")
+          .select("id")
+          .eq("clock_employee_id", clockEmployeeId)
+          .maybeSingle();
 
-      if (error) throw error;
+        if (existing) {
+          const { error } = await supabase
+            .from("employee_onboarding")
+            .update({ documents_completed: true })
+            .eq("clock_employee_id", clockEmployeeId);
+          if (error) throw error;
+        } else {
+          const { error } = await supabase
+            .from("employee_onboarding")
+            .insert({ clock_employee_id: clockEmployeeId, documents_completed: true });
+          if (error) throw error;
+        }
+      } else {
+        const { error } = await supabase
+          .from("employee_onboarding")
+          .update({ documents_completed: true })
+          .eq("user_id", userData.user.id);
+        if (error) throw error;
+      }
 
       toast.success("Documents section marked complete");
       onComplete();

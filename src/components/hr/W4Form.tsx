@@ -31,11 +31,16 @@ export function W4Form({ onboarding, onComplete, clockEmployeeId }: W4FormProps)
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) throw new Error("Not authenticated");
 
-      const payload = {
-        user_id: userData.user.id,
+      const payload: any = {
         ...formData,
         w4_completed: true,
       };
+
+      if (clockEmployeeId) {
+        payload.clock_employee_id = clockEmployeeId;
+      } else {
+        payload.user_id = userData.user.id;
+      }
 
       if (onboarding?.id) {
         const { error } = await supabase
