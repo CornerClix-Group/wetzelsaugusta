@@ -289,15 +289,6 @@ const Index = () => {
                   <p className="text-primary-foreground/40 text-center py-12 text-sm">No employees added yet</p>
                 )}
               </div>
-              <div className="text-center pt-2">
-                <button
-                  onClick={() => navigate("/auth")}
-                  className="text-xs text-primary-foreground/30 hover:text-primary-foreground/50 transition-colors flex items-center gap-1.5 mx-auto"
-                >
-                  <Settings className="h-3 w-3" />
-                  Owner Login
-                </button>
-              </div>
             </div>
           )}
 
@@ -480,6 +471,16 @@ const Index = () => {
           )}
         </div>
       </div>
+
+      {/* Footer */}
+      <footer className="pb-4 pt-2 text-center">
+        <button
+          onClick={() => navigate("/auth")}
+          className="text-xs text-primary-foreground/20 hover:text-primary-foreground/40 transition-colors"
+        >
+          Log in
+        </button>
+      </footer>
     </div>
   );
 };
