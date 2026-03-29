@@ -110,8 +110,46 @@ Deno.serve(async (req) => {
         (u: any) => u.email?.toLowerCase() === trimmedEmail.toLowerCase()
       );
       if (existing) {
-        return new Response(JSON.stringify({ error: "An account with this email already exists" }), {
-          status: 409,
+        // Check if this user is already linked to another clock employee
+        const { data: otherEmp } = await supabaseAdmin
+          .from("clock_employees")
+          .select("id, full_name")
+          .eq("linked_user_id", existing.id)
+          .neq("id", clock_employee_id)
+          .maybeSingle();
+
+        if (otherEmp) {
+          return new Response(JSON.stringify({ error: `This email is already linked to another employee: ${otherEmp.full_name}` }), {
+            status: 409,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        // Email exists but not linked to another employee — link to this one
+        const userId = existing.id;
+        await supabaseAdmin
+          .from("clock_employees")
+          .update({ linked_user_id: userId, role })
+          .eq("id", clock_employee_id);
+
+        await supabaseAdmin
+          .from("user_roles")
+          .upsert({ user_id: userId, role }, { onConflict: "user_id,role" });
+
+        // Resend invite email
+        try {
+          await supabaseAdmin.auth.admin.inviteUserByEmail(trimmedEmail, {
+            data: { full_name: employee.full_name, is_clock_employee: true },
+          });
+        } catch (_) {
+          // User may already be confirmed — that's fine
+        }
+
+        return new Response(JSON.stringify({
+          success: true,
+          message: `${employee.full_name} linked to existing account and invite resent to ${trimmedEmail}`,
+          user_id: userId,
+        }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
