@@ -114,7 +114,7 @@ export default function HROnboarding() {
     );
   }
 
-  if (isOwner) {
+  if (isOwner && !isOnBehalfMode) {
     return <EmployeeOnboardingDashboard />;
   }
 
@@ -123,8 +123,12 @@ export default function HROnboarding() {
       <div className="max-w-5xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-4xl font-bold text-foreground">Employee Onboarding</h1>
-            <p className="text-muted-foreground mt-2">Complete your onboarding requirements</p>
+            <h1 className="text-4xl font-bold text-foreground">
+              {isOnBehalfMode ? `HR Info for ${forEmployeeName || "Employee"}` : "Employee Onboarding"}
+            </h1>
+            <p className="text-muted-foreground mt-2">
+              {isOnBehalfMode ? "Fill out HR paperwork on behalf of this employee" : "Complete your onboarding requirements"}
+            </p>
           </div>
           {onboarding?.onboarding_completed && (
             <Badge className="bg-green-600">
