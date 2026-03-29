@@ -13,6 +13,7 @@ import { SignaturePad } from "@/components/compliance/SignaturePad";
 interface PolicyAcknowledgementsProps {
   userId: string;
   onComplete: () => void;
+  clockEmployeeId?: string | null;
 }
 
 const policies = [
