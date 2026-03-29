@@ -347,6 +347,25 @@ const Employees = () => {
                     Demote
                   </Button>
                 )}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => navigate(`/dashboard/hr-onboarding?for=${emp.id}&name=${encodeURIComponent(emp.full_name)}`)}
+                >
+                  <FileText className="h-3.5 w-3.5 mr-1" />
+                  Fill HR Info
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setHrInviteDialog({ open: true, employee: emp });
+                    setHrInviteEmail("");
+                  }}
+                >
+                  <Send className="h-3.5 w-3.5 mr-1" />
+                  Send HR Invite
+                </Button>
                 <Button size="sm" variant="ghost" onClick={() => handleDeactivate(emp)}>
                   <UserX className="h-3.5 w-3.5 mr-1" />
                   Deactivate
