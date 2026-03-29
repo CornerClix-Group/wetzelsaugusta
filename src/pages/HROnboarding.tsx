@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,8 +19,14 @@ import { useToast } from "@/hooks/use-toast";
 export default function HROnboarding() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [searchParams] = useSearchParams();
   const [activeStep, setActiveStep] = useState<string>("w4");
   const [isOwner, setIsOwner] = useState(false);
+
+  // "on behalf of" mode: owner filling HR info for a clock employee
+  const forClockEmployeeId = searchParams.get("for");
+  const forEmployeeName = searchParams.get("name");
+  const isOnBehalfMode = !!forClockEmployeeId;
 
   const { data: user } = useQuery({
     queryKey: ["current-user"],
@@ -47,20 +54,29 @@ export default function HROnboarding() {
     setIsOwner(userRole === "owner" || userRole === "manager");
   }, [userRole]);
 
+  // In on-behalf mode, load onboarding by clock_employee_id; otherwise by user_id
   const { data: onboarding, isLoading } = useQuery({
-    queryKey: ["employee-onboarding", user?.id],
+    queryKey: ["employee-onboarding", isOnBehalfMode ? forClockEmployeeId : user?.id],
     queryFn: async () => {
+      if (isOnBehalfMode) {
+        const { data, error } = await supabase
+          .from("employee_onboarding")
+          .select("*")
+          .eq("clock_employee_id", forClockEmployeeId)
+          .maybeSingle();
+        if (error && error.code !== "PGRST116") throw error;
+        return data;
+      }
       if (!user?.id) return null;
       const { data, error } = await supabase
         .from("employee_onboarding")
         .select("*")
         .eq("user_id", user.id)
         .maybeSingle();
-
       if (error && error.code !== "PGRST116") throw error;
       return data;
     },
-    enabled: !!user?.id && !isOwner,
+    enabled: isOnBehalfMode || (!!user?.id && !isOwner),
   });
 
   const completionSteps = [
