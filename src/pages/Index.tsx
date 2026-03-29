@@ -471,6 +471,16 @@ const Index = () => {
           )}
         </div>
       </div>
+
+      {/* Footer */}
+      <footer className="pb-4 pt-2 text-center">
+        <button
+          onClick={() => navigate("/auth")}
+          className="text-xs text-primary-foreground/20 hover:text-primary-foreground/40 transition-colors"
+        >
+          Log in
+        </button>
+      </footer>
     </div>
   );
 };
