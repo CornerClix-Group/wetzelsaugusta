@@ -11,9 +11,10 @@ import { Save, Shield } from "lucide-react";
 interface DirectDepositFormProps {
   onboarding: any;
   onComplete: () => void;
+  clockEmployeeId?: string | null;
 }
 
-export function DirectDepositForm({ onboarding, onComplete }: DirectDepositFormProps) {
+export function DirectDepositForm({ onboarding, onComplete, clockEmployeeId }: DirectDepositFormProps) {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     bank_name: onboarding?.bank_name || "",
