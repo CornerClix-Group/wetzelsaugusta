@@ -89,6 +89,7 @@ export type Database = {
       clock_employees: {
         Row: {
           created_at: string
+          display_name: string | null
           full_name: string
           id: string
           is_active: boolean
@@ -99,6 +100,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          display_name?: string | null
           full_name: string
           id?: string
           is_active?: boolean
@@ -109,6 +111,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          display_name?: string | null
           full_name?: string
           id?: string
           is_active?: boolean
@@ -337,6 +340,41 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: true
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employee_permissions: {
+        Row: {
+          clock_employee_id: string
+          granted: boolean
+          granted_by: string | null
+          id: string
+          permission: string
+          updated_at: string | null
+        }
+        Insert: {
+          clock_employee_id: string
+          granted?: boolean
+          granted_by?: string | null
+          id?: string
+          permission: string
+          updated_at?: string | null
+        }
+        Update: {
+          clock_employee_id?: string
+          granted?: boolean
+          granted_by?: string | null
+          id?: string
+          permission?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_permissions_clock_employee_id_fkey"
+            columns: ["clock_employee_id"]
+            isOneToOne: false
+            referencedRelation: "clock_employees"
             referencedColumns: ["id"]
           },
         ]
