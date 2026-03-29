@@ -12,6 +12,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Users, RotateCcw, Plus, ArrowUpCircle, ArrowDownCircle, UserX, Trash2, Briefcase, Mail, FileText, Send, Pencil, Shield } from "lucide-react";
 import { toast } from "sonner";
 
+const ROLE_LABELS: Record<string, { label: string; className: string }> = {
+  owner: { label: "Owner", className: "bg-purple-100 text-purple-800 border-purple-200" },
+  franchise_owner: { label: "Franchise Owner", className: "bg-purple-100 text-purple-700 border-purple-200" },
+  manager: { label: "Manager", className: "bg-blue-100 text-blue-800 border-blue-200" },
+  shift_lead: { label: "Shift Lead", className: "bg-amber-100 text-amber-800 border-amber-200" },
+  business_manager: { label: "Business Manager", className: "bg-teal-100 text-teal-800 border-teal-200" },
+  employee: { label: "Employee", className: "bg-secondary text-secondary-foreground" },
+};
+
 const PERMISSION_MODULES = [
   { key: "compliance", label: "Compliance" },
   { key: "inventory", label: "Inventory" },
@@ -387,8 +396,8 @@ const Employees = () => {
                   <p className="text-xs text-muted-foreground">Display: {emp.display_name}</p>
                 )}
                 <div className="flex gap-1 mt-1 flex-wrap">
-                  <Badge variant={emp.role === "employee" ? "secondary" : "default"}>
-                    {emp.role}
+                  <Badge variant="outline" className={ROLE_LABELS[emp.role]?.className || ""}>
+                    {ROLE_LABELS[emp.role]?.label || emp.role}
                   </Badge>
                   {emp.pin_code && <Badge variant="outline">PIN set</Badge>}
                   {emp.linked_user_id && <Badge variant="outline">Dashboard access</Badge>}
