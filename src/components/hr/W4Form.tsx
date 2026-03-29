@@ -11,9 +11,10 @@ import { Save } from "lucide-react";
 interface W4FormProps {
   onboarding: any;
   onComplete: () => void;
+  clockEmployeeId?: string | null;
 }
 
-export function W4Form({ onboarding, onComplete }: W4FormProps) {
+export function W4Form({ onboarding, onComplete, clockEmployeeId }: W4FormProps) {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     filing_status: onboarding?.filing_status || "",
