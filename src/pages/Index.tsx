@@ -52,7 +52,7 @@ const Index = () => {
   const fetchEmployees = async () => {
     const { data } = await supabase
       .from("clock_employees")
-      .select("id, full_name, pin_code, role, is_active")
+      .select("id, full_name, display_name, pin_code, role, is_active")
       .eq("is_active", true)
       .order("full_name");
     setEmployees(data || []);
