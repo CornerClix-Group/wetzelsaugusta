@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -7,14 +8,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Users, RotateCcw, Plus, ArrowUpCircle, ArrowDownCircle, UserX, Trash2, Briefcase, Mail } from "lucide-react";
+import { Users, RotateCcw, Plus, ArrowUpCircle, ArrowDownCircle, UserX, Trash2, Briefcase, Mail, FileText, Send } from "lucide-react";
 import { toast } from "sonner";
 
 const Employees = () => {
+  const navigate = useNavigate();
   const [clockEmployees, setClockEmployees] = useState<any[]>([]);
   const [businessManagers, setBusinessManagers] = useState<any[]>([]);
   const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
   const [addDialog, setAddDialog] = useState(false);
+  const [hrInviteDialog, setHrInviteDialog] = useState<{ open: boolean; employee: any | null }>({ open: false, employee: null });
+  const [hrInviteEmail, setHrInviteEmail] = useState("");
   const [newName, setNewName] = useState("");
   const [promoteDialog, setPromoteDialog] = useState<{ open: boolean; employee: any | null }>({ open: false, employee: null });
   const [promoteRole, setPromoteRole] = useState("manager");
@@ -343,6 +347,25 @@ const Employees = () => {
                     Demote
                   </Button>
                 )}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => navigate(`/dashboard/hr-onboarding?for=${emp.id}&name=${encodeURIComponent(emp.full_name)}`)}
+                >
+                  <FileText className="h-3.5 w-3.5 mr-1" />
+                  Fill HR Info
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setHrInviteDialog({ open: true, employee: emp });
+                    setHrInviteEmail("");
+                  }}
+                >
+                  <Send className="h-3.5 w-3.5 mr-1" />
+                  Send HR Invite
+                </Button>
                 <Button size="sm" variant="ghost" onClick={() => handleDeactivate(emp)}>
                   <UserX className="h-3.5 w-3.5 mr-1" />
                   Deactivate
@@ -510,6 +533,55 @@ const Employees = () => {
             <Button variant="outline" onClick={() => setRemoveBMDialog({ open: false, manager: null })}>Cancel</Button>
             <Button variant="destructive" onClick={handleRemoveBM} disabled={saving}>
               {saving ? "Removing..." : "Remove"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Send HR Invite Dialog */}
+      <Dialog open={hrInviteDialog.open} onOpenChange={(open) => setHrInviteDialog({ open, employee: open ? hrInviteDialog.employee : null })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Send HR Invite to {hrInviteDialog.employee?.full_name}</DialogTitle>
+            <DialogDescription>
+              They'll receive an email to set up their account and complete their own HR paperwork (W-4, direct deposit, emergency contacts, etc.).
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label>Email Address</Label>
+            <Input
+              type="email"
+              placeholder="employee@example.com"
+              value={hrInviteEmail}
+              onChange={(e) => setHrInviteEmail(e.target.value)}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setHrInviteDialog({ open: false, employee: null })}>Cancel</Button>
+            <Button
+              onClick={async () => {
+                if (!hrInviteDialog.employee || !hrInviteEmail.trim()) return;
+                setSaving(true);
+                try {
+                  const data = await callEdgeFunction("create-employee-account", {
+                    clock_employee_id: hrInviteDialog.employee.id,
+                    role: "employee",
+                    email: hrInviteEmail.trim(),
+                    send_invite: true,
+                  });
+                  toast.success(data.message || `HR invite sent to ${hrInviteEmail.trim()}`);
+                  setHrInviteDialog({ open: false, employee: null });
+                  setHrInviteEmail("");
+                  fetchData();
+                } catch (error: any) {
+                  toast.error(error.message || "Failed to send HR invite");
+                } finally {
+                  setSaving(false);
+                }
+              }}
+              disabled={saving || !hrInviteEmail.trim()}
+            >
+              {saving ? "Sending..." : "Send Invite"}
             </Button>
           </DialogFooter>
         </DialogContent>

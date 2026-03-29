@@ -13,6 +13,7 @@ import { SignaturePad } from "@/components/compliance/SignaturePad";
 interface PolicyAcknowledgementsProps {
   userId: string;
   onComplete: () => void;
+  clockEmployeeId?: string | null;
 }
 
 const policies = [
@@ -38,7 +39,7 @@ const policies = [
   },
 ];
 
-export function PolicyAcknowledgements({ userId, onComplete }: PolicyAcknowledgementsProps) {
+export function PolicyAcknowledgements({ userId, onComplete, clockEmployeeId }: PolicyAcknowledgementsProps) {
   const queryClient = useQueryClient();
   const [acknowledged, setAcknowledged] = useState<Set<string>>(new Set());
   const [signatures, setSignatures] = useState<Record<string, string>>({});
@@ -100,16 +101,27 @@ export function PolicyAcknowledgements({ userId, onComplete }: PolicyAcknowledge
       }
 
       // Mark policies section as complete
-      const { error: updateError } = await supabase
-        .from("employee_onboarding")
-        .update({
-          policies_completed: true,
-          onboarding_completed: true,
-          completed_at: new Date().toISOString(),
-        })
-        .eq("user_id", userId);
-
-      if (updateError) throw updateError;
+      if (clockEmployeeId) {
+        const { error: updateError } = await supabase
+          .from("employee_onboarding")
+          .update({
+            policies_completed: true,
+            onboarding_completed: true,
+            completed_at: new Date().toISOString(),
+          })
+          .eq("clock_employee_id", clockEmployeeId);
+        if (updateError) throw updateError;
+      } else {
+        const { error: updateError } = await supabase
+          .from("employee_onboarding")
+          .update({
+            policies_completed: true,
+            onboarding_completed: true,
+            completed_at: new Date().toISOString(),
+          })
+          .eq("user_id", userId);
+        if (updateError) throw updateError;
+      }
 
       toast.success("Policy acknowledgements submitted successfully");
       queryClient.invalidateQueries({ queryKey: ["policy-acknowledgements"] });

@@ -11,9 +11,10 @@ import { Save, Shield } from "lucide-react";
 interface DirectDepositFormProps {
   onboarding: any;
   onComplete: () => void;
+  clockEmployeeId?: string | null;
 }
 
-export function DirectDepositForm({ onboarding, onComplete }: DirectDepositFormProps) {
+export function DirectDepositForm({ onboarding, onComplete, clockEmployeeId }: DirectDepositFormProps) {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     bank_name: onboarding?.bank_name || "",
@@ -37,15 +38,19 @@ export function DirectDepositForm({ onboarding, onComplete }: DirectDepositFormP
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) throw new Error("Not authenticated");
 
-      // Note: In production, account_number should be encrypted server-side
-      const payload = {
-        user_id: userData.user.id,
+      const payload: any = {
         bank_name: formData.bank_name,
         account_type: formData.account_type,
         routing_number: formData.routing_number,
-        account_number_encrypted: formData.account_number, // Should be encrypted
+        account_number_encrypted: formData.account_number,
         direct_deposit_completed: true,
       };
+
+      if (clockEmployeeId) {
+        payload.clock_employee_id = clockEmployeeId;
+      } else {
+        payload.user_id = userData.user.id;
+      }
 
       if (onboarding?.id) {
         const { error } = await supabase

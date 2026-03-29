@@ -9,9 +9,10 @@ import { Save } from "lucide-react";
 interface EmergencyContactsFormProps {
   onboarding: any;
   onComplete: () => void;
+  clockEmployeeId?: string | null;
 }
 
-export function EmergencyContactsForm({ onboarding, onComplete }: EmergencyContactsFormProps) {
+export function EmergencyContactsForm({ onboarding, onComplete, clockEmployeeId }: EmergencyContactsFormProps) {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     emergency_contact_1_name: onboarding?.emergency_contact_1_name || "",
@@ -30,11 +31,16 @@ export function EmergencyContactsForm({ onboarding, onComplete }: EmergencyConta
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) throw new Error("Not authenticated");
 
-      const payload = {
-        user_id: userData.user.id,
+      const payload: any = {
         ...formData,
         emergency_contacts_completed: true,
       };
+
+      if (clockEmployeeId) {
+        payload.clock_employee_id = clockEmployeeId;
+      } else {
+        payload.user_id = userData.user.id;
+      }
 
       if (onboarding?.id) {
         const { error } = await supabase

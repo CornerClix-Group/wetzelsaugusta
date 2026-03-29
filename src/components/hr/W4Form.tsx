@@ -11,9 +11,10 @@ import { Save } from "lucide-react";
 interface W4FormProps {
   onboarding: any;
   onComplete: () => void;
+  clockEmployeeId?: string | null;
 }
 
-export function W4Form({ onboarding, onComplete }: W4FormProps) {
+export function W4Form({ onboarding, onComplete, clockEmployeeId }: W4FormProps) {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     filing_status: onboarding?.filing_status || "",
@@ -30,11 +31,16 @@ export function W4Form({ onboarding, onComplete }: W4FormProps) {
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) throw new Error("Not authenticated");
 
-      const payload = {
-        user_id: userData.user.id,
+      const payload: any = {
         ...formData,
         w4_completed: true,
       };
+
+      if (clockEmployeeId) {
+        payload.clock_employee_id = clockEmployeeId;
+      } else {
+        payload.user_id = userData.user.id;
+      }
 
       if (onboarding?.id) {
         const { error } = await supabase

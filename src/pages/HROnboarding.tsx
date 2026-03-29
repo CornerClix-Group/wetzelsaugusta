@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,8 +19,14 @@ import { useToast } from "@/hooks/use-toast";
 export default function HROnboarding() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [searchParams] = useSearchParams();
   const [activeStep, setActiveStep] = useState<string>("w4");
   const [isOwner, setIsOwner] = useState(false);
+
+  // "on behalf of" mode: owner filling HR info for a clock employee
+  const forClockEmployeeId = searchParams.get("for");
+  const forEmployeeName = searchParams.get("name");
+  const isOnBehalfMode = !!forClockEmployeeId;
 
   const { data: user } = useQuery({
     queryKey: ["current-user"],
@@ -47,20 +54,29 @@ export default function HROnboarding() {
     setIsOwner(userRole === "owner" || userRole === "manager");
   }, [userRole]);
 
+  // In on-behalf mode, load onboarding by clock_employee_id; otherwise by user_id
   const { data: onboarding, isLoading } = useQuery({
-    queryKey: ["employee-onboarding", user?.id],
+    queryKey: ["employee-onboarding", isOnBehalfMode ? forClockEmployeeId : user?.id],
     queryFn: async () => {
+      if (isOnBehalfMode) {
+        const { data, error } = await supabase
+          .from("employee_onboarding")
+          .select("*")
+          .eq("clock_employee_id", forClockEmployeeId)
+          .maybeSingle();
+        if (error && error.code !== "PGRST116") throw error;
+        return data;
+      }
       if (!user?.id) return null;
       const { data, error } = await supabase
         .from("employee_onboarding")
         .select("*")
         .eq("user_id", user.id)
         .maybeSingle();
-
       if (error && error.code !== "PGRST116") throw error;
       return data;
     },
-    enabled: !!user?.id && !isOwner,
+    enabled: isOnBehalfMode || (!!user?.id && !isOwner),
   });
 
   const completionSteps = [
@@ -98,7 +114,7 @@ export default function HROnboarding() {
     );
   }
 
-  if (isOwner) {
+  if (isOwner && !isOnBehalfMode) {
     return <EmployeeOnboardingDashboard />;
   }
 
@@ -107,8 +123,12 @@ export default function HROnboarding() {
       <div className="max-w-5xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-4xl font-bold text-foreground">Employee Onboarding</h1>
-            <p className="text-muted-foreground mt-2">Complete your onboarding requirements</p>
+            <h1 className="text-4xl font-bold text-foreground">
+              {isOnBehalfMode ? `HR Info for ${forEmployeeName || "Employee"}` : "Employee Onboarding"}
+            </h1>
+            <p className="text-muted-foreground mt-2">
+              {isOnBehalfMode ? "Fill out HR paperwork on behalf of this employee" : "Complete your onboarding requirements"}
+            </p>
           </div>
           {onboarding?.onboarding_completed && (
             <Badge className="bg-green-600">
@@ -154,19 +174,19 @@ export default function HROnboarding() {
         <Card>
           <CardContent className="pt-6">
             {activeStep === "w4" && (
-              <W4Form onboarding={onboarding} onComplete={handleStepComplete} />
+              <W4Form onboarding={onboarding} onComplete={handleStepComplete} clockEmployeeId={forClockEmployeeId} />
             )}
             {activeStep === "direct_deposit" && (
-              <DirectDepositForm onboarding={onboarding} onComplete={handleStepComplete} />
+              <DirectDepositForm onboarding={onboarding} onComplete={handleStepComplete} clockEmployeeId={forClockEmployeeId} />
             )}
             {activeStep === "emergency" && (
-              <EmergencyContactsForm onboarding={onboarding} onComplete={handleStepComplete} />
+              <EmergencyContactsForm onboarding={onboarding} onComplete={handleStepComplete} clockEmployeeId={forClockEmployeeId} />
             )}
             {activeStep === "documents" && (
-              <DocumentUploadSection userId={user?.id || ""} onComplete={handleStepComplete} />
+              <DocumentUploadSection userId={user?.id || ""} onComplete={handleStepComplete} clockEmployeeId={forClockEmployeeId} />
             )}
             {activeStep === "policies" && (
-              <PolicyAcknowledgements userId={user?.id || ""} onComplete={handleStepComplete} />
+              <PolicyAcknowledgements userId={user?.id || ""} onComplete={handleStepComplete} clockEmployeeId={forClockEmployeeId} />
             )}
           </CardContent>
         </Card>
