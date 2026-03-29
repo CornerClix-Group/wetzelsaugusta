@@ -9,9 +9,10 @@ import { Save } from "lucide-react";
 interface EmergencyContactsFormProps {
   onboarding: any;
   onComplete: () => void;
+  clockEmployeeId?: string | null;
 }
 
-export function EmergencyContactsForm({ onboarding, onComplete }: EmergencyContactsFormProps) {
+export function EmergencyContactsForm({ onboarding, onComplete, clockEmployeeId }: EmergencyContactsFormProps) {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     emergency_contact_1_name: onboarding?.emergency_contact_1_name || "",
