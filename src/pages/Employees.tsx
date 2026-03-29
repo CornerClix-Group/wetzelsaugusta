@@ -12,10 +12,13 @@ import { Users, RotateCcw, Plus, ArrowUpCircle, ArrowDownCircle, UserX, Trash2, 
 import { toast } from "sonner";
 
 const Employees = () => {
+  const navigate = useNavigate();
   const [clockEmployees, setClockEmployees] = useState<any[]>([]);
   const [businessManagers, setBusinessManagers] = useState<any[]>([]);
   const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
   const [addDialog, setAddDialog] = useState(false);
+  const [hrInviteDialog, setHrInviteDialog] = useState<{ open: boolean; employee: any | null }>({ open: false, employee: null });
+  const [hrInviteEmail, setHrInviteEmail] = useState("");
   const [newName, setNewName] = useState("");
   const [promoteDialog, setPromoteDialog] = useState<{ open: boolean; employee: any | null }>({ open: false, employee: null });
   const [promoteRole, setPromoteRole] = useState("manager");
