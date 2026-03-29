@@ -9,6 +9,7 @@ import { toast } from "sonner";
 type ClockEmployee = {
   id: string;
   full_name: string;
+  display_name: string | null;
   pin_code: string | null;
   role: string;
   is_active: boolean;
