@@ -396,8 +396,8 @@ const Employees = () => {
                   <p className="text-xs text-muted-foreground">Display: {emp.display_name}</p>
                 )}
                 <div className="flex gap-1 mt-1 flex-wrap">
-                  <Badge variant={emp.role === "employee" ? "secondary" : "default"}>
-                    {emp.role}
+                  <Badge variant="outline" className={ROLE_LABELS[emp.role]?.className || ""}>
+                    {ROLE_LABELS[emp.role]?.label || emp.role}
                   </Badge>
                   {emp.pin_code && <Badge variant="outline">PIN set</Badge>}
                   {emp.linked_user_id && <Badge variant="outline">Dashboard access</Badge>}

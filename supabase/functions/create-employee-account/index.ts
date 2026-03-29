@@ -11,7 +11,6 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Verify caller is an authenticated owner
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -31,23 +30,19 @@ Deno.serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    const { data: claimsData, error: claimsError } = await supabaseUser.auth.getClaims(
-      authHeader.replace("Bearer ", "")
-    );
-    if (claimsError || !claimsData?.claims) {
+    const { data: { user: caller }, error: authError } = await supabaseUser.auth.getUser();
+    if (authError || !caller) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const callerId = claimsData.claims.sub;
-
     // Check caller is owner
     const { data: callerRole } = await supabaseAdmin
       .from("user_roles")
       .select("role")
-      .eq("user_id", callerId)
+      .eq("user_id", caller.id)
       .in("role", ["owner"])
       .maybeSingle();
 
@@ -58,7 +53,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { clock_employee_id, role } = await req.json();
+    const { clock_employee_id, role, email, send_invite } = await req.json();
 
     if (!clock_employee_id || !role) {
       return new Response(JSON.stringify({ error: "Missing clock_employee_id or role" }), {
@@ -67,8 +62,8 @@ Deno.serve(async (req) => {
       });
     }
 
-    if (!["manager", "shift_lead", "business_manager"].includes(role)) {
-      return new Response(JSON.stringify({ error: "Invalid role. Must be manager, shift_lead, or business_manager" }), {
+    if (!["manager", "shift_lead", "business_manager", "employee"].includes(role)) {
+      return new Response(JSON.stringify({ error: "Invalid role" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -89,7 +84,7 @@ Deno.serve(async (req) => {
     }
 
     if (employee.linked_user_id) {
-      // Already promoted - just update the role
+      // Already has an account - just update the role
       await supabaseAdmin
         .from("user_roles")
         .upsert({ user_id: employee.linked_user_id, role }, { onConflict: "user_id,role" });
@@ -104,7 +99,59 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Create a hidden auth account with random password and email
+    // Branch: HR invite with real email vs hidden account for PIN promotion
+    if (send_invite && email?.trim()) {
+      // Send a real invite email to the employee
+      const trimmedEmail = email.trim();
+
+      // Check if email already exists
+      const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
+      const existing = existingUsers?.users?.find(
+        (u: any) => u.email?.toLowerCase() === trimmedEmail.toLowerCase()
+      );
+      if (existing) {
+        return new Response(JSON.stringify({ error: "An account with this email already exists" }), {
+          status: 409,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Invite by email - sends a real invitation email
+      const { data: inviteData, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(
+        trimmedEmail,
+        { data: { full_name: employee.full_name, is_clock_employee: true } }
+      );
+
+      if (inviteError || !inviteData?.user) {
+        return new Response(JSON.stringify({ error: inviteError?.message || "Failed to send invite" }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const userId = inviteData.user.id;
+
+      // Link the clock employee to the auth user
+      await supabaseAdmin
+        .from("clock_employees")
+        .update({ linked_user_id: userId, role })
+        .eq("id", clock_employee_id);
+
+      // Assign role
+      await supabaseAdmin
+        .from("user_roles")
+        .insert({ user_id: userId, role });
+
+      return new Response(JSON.stringify({
+        success: true,
+        message: `HR invite sent to ${trimmedEmail} for ${employee.full_name}`,
+        user_id: userId,
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Default: Create a hidden auth account with random password (for PIN-based promotion)
     const randomPassword = crypto.randomUUID() + "!Aa1";
     const hiddenEmail = `clock-${clock_employee_id}@internal.wetzels.local`;
 

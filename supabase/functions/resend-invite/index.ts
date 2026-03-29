@@ -71,14 +71,47 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Generate a new invite/magic link for the existing user
-    const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
-      type: "magiclink",
-      email: userData.user.email,
-    });
+    const userEmail = userData.user.email;
 
-    if (linkError) {
-      return new Response(JSON.stringify({ error: linkError.message }), {
+    // Skip internal hidden emails - they don't need invites
+    if (userEmail.endsWith("@internal.wetzels.local")) {
+      return new Response(JSON.stringify({ error: "This employee uses PIN login, not email invitations" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Use inviteUserByEmail to actually send a new invitation email
+    // This works for users who haven't confirmed yet - sends a new invite
+    const { data: inviteData, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(
+      userEmail,
+      { data: userData.user.user_metadata }
+    );
+
+    if (inviteError) {
+      // If user already confirmed, generate a magic link instead
+      if (inviteError.message?.includes("already been registered") || inviteError.message?.includes("already confirmed")) {
+        const { error: linkError } = await supabaseAdmin.auth.admin.generateLink({
+          type: "magiclink",
+          email: userEmail,
+        });
+
+        if (linkError) {
+          return new Response(JSON.stringify({ error: linkError.message }), {
+            status: 500,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        return new Response(JSON.stringify({
+          success: true,
+          message: `Login link sent to ${userEmail}`,
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      return new Response(JSON.stringify({ error: inviteError.message }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -86,7 +119,7 @@ Deno.serve(async (req) => {
 
     return new Response(JSON.stringify({
       success: true,
-      message: `Invite resent to ${userData.user.email}`,
+      message: `Invite resent to ${userEmail}`,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
