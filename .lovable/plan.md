@@ -1,79 +1,68 @@
 
 
-## Plan: Employee Editing, Display Names, and Granular Permissions
+## Analysis & Plan: Email Invitations, Role Badges, and Scheduling Notifications
 
-This covers three major gaps: employees can't be edited after creation, there's no display name for privacy on the terminal, and there's no way to toggle individual module access per employee.
+### Issues Found
 
-### 1. Add `display_name` column to `clock_employees`
+**1. Role badge only shows "employee"**
+In `Employees.tsx` line 390-392, the badge displays `emp.role` from the `clock_employees` table. The `role` column defaults to `'employee'` and should update to `manager`/`shift_lead` on promotion via `create-employee-account`. However, the badge just renders the raw DB value with no formatting. It should display human-readable labels: "Owner", "Manager", "Shift Lead" instead of `manager`, `shift_lead`. Additionally, owners/franchise owners who aren't in `clock_employees` won't appear here at all (they log in via `/auth`), so this is correct — but promoted employees should show their updated role.
 
-**Database migration:**
-```sql
-ALTER TABLE clock_employees ADD COLUMN display_name text;
-```
+**2. HR employee invite is broken**
+The "Send HR Invite" button (line 727) calls `create-employee-account` with `role: "employee"` and `send_invite: true` + `email`. But the edge function (`create-employee-account/index.ts`) does NOT handle `email` or `send_invite` parameters — it generates a random hidden email (`clock-{id}@internal.wetzels.local`). The invite email is never actually sent.
 
-- `full_name` = legal name (for payroll/HR)
-- `display_name` = what shows on the terminal dropdown (e.g. first name only, nickname)
-- Terminal (Index.tsx) will show `display_name ?? full_name` in the employee list
+**3. Business manager invitation emails**
+The `invite-business-manager` function uses `inviteUserByEmail` which sends a real email via the built-in auth system. This should work, but the invite link points to the default Supabase confirmation URL — the user needs to land on `/auth` to set their password. The `resend-invite` function was fixed to use `generateLink` but `generateLink` with type `magiclink` doesn't actually send an email — it just returns a link. So resend doesn't actually deliver an email.
 
-### 2. Add "Edit Employee" dialog to Employees page
+**4. Timesheet report doesn't send emails**
+`send-timesheet-report` builds HTML but has a comment on line 123: "In production, integrate with an email service." It returns the report data as JSON but never sends an email.
 
-On each employee card, add an **"Edit"** button that opens a dialog with:
-- **Full Name** (legal, for HR/payroll)
-- **Display Name** (shown on terminal)
+**5. Schedule notifications**
+The Schedule page is a placeholder. No notification/confirmation framework exists.
 
-This writes directly to `clock_employees` via an update query.
+---
 
-### 3. Update Add Employee dialog
+### Plan
 
-Change the "Add Employee" dialog to collect both **Full Name** and **Display Name** fields at creation time.
+#### Step 1: Fix role badge display
+- In `Employees.tsx`, replace the raw `emp.role` badge with a formatted label map:
+  - `employee` → "Employee"
+  - `manager` → "Manager"
+  - `shift_lead` → "Shift Lead"
+  - `owner` → "Owner"
+- Apply distinct badge colors per role (e.g., Manager = blue, Shift Lead = amber)
 
-### 4. Update terminal to show display names
+#### Step 2: Fix HR employee invite (Send HR Invite button)
+- Update `create-employee-account` edge function to accept optional `email` and `send_invite` parameters
+- When `send_invite: true` and `email` is provided:
+  - Create the auth account using the provided email instead of the hidden email
+  - Use `inviteUserByEmail` to send a real invite email
+  - Link the clock employee to the new auth user
+  - Assign an `employee` role (no dashboard access, just HR onboarding access)
+- When no email/send_invite, keep existing hidden-account behavior for PIN-based promotion
 
-In `Index.tsx`, change the employee list to show `display_name || full_name` instead of just `full_name`.
+#### Step 3: Fix resend-invite to actually send an email
+- Replace `generateLink` (which only returns a URL) with `inviteUserByEmail` wrapped in try/catch
+- If user already confirmed, use `generateLink` with type `magiclink` and then use the built-in email system to send it
 
-### 5. Granular permissions system (toggle-based)
+#### Step 4: Make timesheet report actually send emails
+- Update `send-timesheet-report` to use Lovable's built-in transactional email system to deliver the HTML report to all active recipients
 
-**New database table:**
-```sql
-CREATE TABLE employee_permissions (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  clock_employee_id uuid REFERENCES clock_employees(id) ON DELETE CASCADE NOT NULL,
-  permission text NOT NULL,
-  granted boolean NOT NULL DEFAULT false,
-  granted_by uuid,
-  updated_at timestamptz DEFAULT now(),
-  UNIQUE (clock_employee_id, permission)
-);
-```
+#### Step 5: Scaffold scheduling notification framework
+- Create a `schedule_notifications` database table to store notification preferences and pending notifications
+- Create a `send-schedule-notification` edge function skeleton that will handle:
+  - Shift assignment notifications
+  - Schedule change alerts
+  - PTO request confirmations
+- Wire the Schedule page to reference this infrastructure (placeholder UI noting notifications are ready to connect)
 
-Available permissions: `compliance`, `inventory`, `trucks`, `employees`, `schedule`, `hr_onboarding`
+### Files to Modify
 
-**Owner UI on each employee card:** An "Edit Permissions" button opens a dialog with toggle switches for each module. Only owners can grant/revoke.
-
-**DashboardLayout.tsx:** Instead of the current role-based menu filtering, also check the employee's individual permissions from `employee_permissions` when they are a promoted employee (manager/shift_lead). Owners always see everything.
-
-### Files Summary
-
-| File | Action |
+| File | Change |
 |------|--------|
-| Migration SQL | Add `display_name` column + `employee_permissions` table + RLS |
-| `src/pages/Employees.tsx` | Add Edit dialog (name fields), Edit Permissions dialog (toggles), update Add dialog |
-| `src/pages/Index.tsx` | Show `display_name` on terminal |
-| `src/components/DashboardLayout.tsx` | Check individual permissions for menu visibility |
-
-### Permission toggles UI concept
-
-```text
-┌─ Edit Permissions: Kiara ──────────────┐
-│                                         │
-│  Compliance          [  toggle  ]       │
-│  Inventory           [  toggle  ]       │
-│  Trucks              [  toggle  ]       │
-│  HR & Onboarding     [  toggle  ]       │
-│  Employees           [  toggle  ]       │
-│  Schedule            [  toggle  ]       │
-│                                         │
-│             [Cancel]  [Save]            │
-└─────────────────────────────────────────┘
-```
+| `src/pages/Employees.tsx` | Format role badges with labels and colors |
+| `supabase/functions/create-employee-account/index.ts` | Handle `email` + `send_invite` for HR invites |
+| `supabase/functions/resend-invite/index.ts` | Actually deliver the email |
+| `supabase/functions/send-timesheet-report/index.ts` | Send email via transactional email system |
+| New: `supabase/functions/send-schedule-notification/index.ts` | Notification framework |
+| Migration SQL | `schedule_notifications` table |
 
