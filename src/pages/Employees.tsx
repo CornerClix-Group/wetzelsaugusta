@@ -537,6 +537,55 @@ const Employees = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Send HR Invite Dialog */}
+      <Dialog open={hrInviteDialog.open} onOpenChange={(open) => setHrInviteDialog({ open, employee: open ? hrInviteDialog.employee : null })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Send HR Invite to {hrInviteDialog.employee?.full_name}</DialogTitle>
+            <DialogDescription>
+              They'll receive an email to set up their account and complete their own HR paperwork (W-4, direct deposit, emergency contacts, etc.).
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label>Email Address</Label>
+            <Input
+              type="email"
+              placeholder="employee@example.com"
+              value={hrInviteEmail}
+              onChange={(e) => setHrInviteEmail(e.target.value)}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setHrInviteDialog({ open: false, employee: null })}>Cancel</Button>
+            <Button
+              onClick={async () => {
+                if (!hrInviteDialog.employee || !hrInviteEmail.trim()) return;
+                setSaving(true);
+                try {
+                  const data = await callEdgeFunction("create-employee-account", {
+                    clock_employee_id: hrInviteDialog.employee.id,
+                    role: "employee",
+                    email: hrInviteEmail.trim(),
+                    send_invite: true,
+                  });
+                  toast.success(data.message || `HR invite sent to ${hrInviteEmail.trim()}`);
+                  setHrInviteDialog({ open: false, employee: null });
+                  setHrInviteEmail("");
+                  fetchData();
+                } catch (error: any) {
+                  toast.error(error.message || "Failed to send HR invite");
+                } finally {
+                  setSaving(false);
+                }
+              }}
+              disabled={saving || !hrInviteEmail.trim()}
+            >
+              {saving ? "Sending..." : "Send Invite"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

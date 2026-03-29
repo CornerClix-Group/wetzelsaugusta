@@ -174,19 +174,19 @@ export default function HROnboarding() {
         <Card>
           <CardContent className="pt-6">
             {activeStep === "w4" && (
-              <W4Form onboarding={onboarding} onComplete={handleStepComplete} />
+              <W4Form onboarding={onboarding} onComplete={handleStepComplete} clockEmployeeId={forClockEmployeeId} />
             )}
             {activeStep === "direct_deposit" && (
-              <DirectDepositForm onboarding={onboarding} onComplete={handleStepComplete} />
+              <DirectDepositForm onboarding={onboarding} onComplete={handleStepComplete} clockEmployeeId={forClockEmployeeId} />
             )}
             {activeStep === "emergency" && (
-              <EmergencyContactsForm onboarding={onboarding} onComplete={handleStepComplete} />
+              <EmergencyContactsForm onboarding={onboarding} onComplete={handleStepComplete} clockEmployeeId={forClockEmployeeId} />
             )}
             {activeStep === "documents" && (
-              <DocumentUploadSection userId={user?.id || ""} onComplete={handleStepComplete} />
+              <DocumentUploadSection userId={user?.id || ""} onComplete={handleStepComplete} clockEmployeeId={forClockEmployeeId} />
             )}
             {activeStep === "policies" && (
-              <PolicyAcknowledgements userId={user?.id || ""} onComplete={handleStepComplete} />
+              <PolicyAcknowledgements userId={user?.id || ""} onComplete={handleStepComplete} clockEmployeeId={forClockEmployeeId} />
             )}
           </CardContent>
         </Card>
