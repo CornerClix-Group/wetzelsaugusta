@@ -39,7 +39,7 @@ const policies = [
   },
 ];
 
-export function PolicyAcknowledgements({ userId, onComplete }: PolicyAcknowledgementsProps) {
+export function PolicyAcknowledgements({ userId, onComplete, clockEmployeeId }: PolicyAcknowledgementsProps) {
   const queryClient = useQueryClient();
   const [acknowledged, setAcknowledged] = useState<Set<string>>(new Set());
   const [signatures, setSignatures] = useState<Record<string, string>>({});
