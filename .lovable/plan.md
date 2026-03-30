@@ -1,63 +1,73 @@
 
 
-## Plan: Automated Weekly Timesheet Email Reports
+## Redesign Home Screen: Simple Clock Terminal + Inventory Button
 
-### What You Have Today
+### What Changes
 
-- **Recipients table** (`timesheet_email_recipients`): You can already add/remove email recipients in Settings. This is where the report gets sent.
-- **Time entries** (`time_entries`): Every clock-in/clock-out is stored here, linked to employees via `clock_employee_id`.
-- **Report generator** (`send-timesheet-report` Edge Function): Builds an HTML report from time entries, but has two problems:
-  1. It only joins on `profiles` (misses clock-only employees who have no profile)
-  2. It generates the report but does **not actually send emails** — it just returns the data
-
-### What Needs to Happen
-
-```text
-┌──────────────┐     ┌──────────────────────┐     ┌─────────────────┐
-│  pg_cron     │────▶│ send-timesheet-report │────▶│ Email queue     │
-│ (weekly Mon) │     │ Edge Function         │     │ (Lovable Email) │
-└──────────────┘     └──────────────────────┘     └────────┬────────┘
-                              │                            │
-                     Queries: │                   Sends to each
-                     • time_entries                recipient in
-                     • clock_employees             timesheet_email_
-                     • timesheet_email_recipients  recipients
-```
+The home screen currently has a name-selection list flow. You want it simplified to a standard clock-in terminal (big PIN pad, no name list), plus an "Inventory" button that PIN-gates access to the inventory page for authorized employees only. PIN setup moves entirely to the dashboard (owner/manager sets PINs for employees).
 
 ### Steps
 
-**1. Fix the report query to include all employees**
+**1. Redesign the Index page layout**
 
-The current `send-timesheet-report` function joins `time_entries` → `profiles` via `employee_id`. Since `employee_id` is now nullable (clock-only employees), these entries are missed. The fix: join on `clock_employees` via `clock_employee_id` instead, so every clock entry is included regardless of whether the employee has a linked account.
+Remove the employee name selection step entirely. The new home screen shows:
+- Large clock display (time + date) at the top
+- A big numeric PIN pad in the center
+- 4 PIN dots above the pad
+- A "Clock In / Out" submit button below the pad
+- An "Inventory" button in the corner or below the clock area
+- Subtle "Log in" link stays in the footer
 
-**2. Wire up actual email sending**
+The flow: employee types their 4-digit PIN and hits "Clock In / Out". The backend looks up which employee has that PIN (no name selection needed).
 
-The project already has a verified email domain (`notify.wetzelsofaugusta.com`) and the email queue infrastructure (pgmq, `process-email-queue` cron). Update `send-timesheet-report` to:
-- Render the HTML report (already done)
-- For each active recipient in `timesheet_email_recipients`, enqueue the email via `enqueue_email` RPC (the same queue that auth/transactional emails use)
-- Log each send to `email_send_log`
+**2. Update `clock-action` edge function to accept PIN-only lookup**
 
-**3. Schedule automatic weekly delivery**
+Currently requires `clock_employee_id` + `pin`. Change it to also support just `pin` (no employee ID). The function queries `clock_employees` where `pin_code = pin` and `is_active = true`. If exactly one match, proceed. If zero or multiple matches, return an error.
 
-Set up a `pg_cron` job that calls `send-timesheet-report` every Monday at 6:00 AM ET. This uses the same pattern as the existing `process-email-queue` cron — an HTTP POST to the Edge Function URL with the service role key.
+**3. Add Inventory PIN flow**
 
-**4. Add a "Send Now" button in Settings**
+When user taps "Inventory":
+- Show the same PIN pad with prompt "Enter Manager PIN"
+- On submit, call `pin-login` edge function to validate the PIN belongs to someone with inventory permission
+- Check `employee_permissions` table for `permission = 'inventory'` and `granted = true`, OR check if the employee's role is `owner` or `manager`
+- If authorized, authenticate via `pin-login` and navigate to `/dashboard/inventory`
+- If not authorized, show "Access denied" toast
 
-Add a manual trigger button next to the recipients list so you can send a report on-demand (for testing or ad-hoc needs). This calls `supabase.functions.invoke('send-timesheet-report')` from the UI.
+**4. Remove the "set-pin" step from the home screen**
 
-### Summary of Changes
+PIN creation/reset is handled entirely from the dashboard employee management UI (already exists via `set-clock-pin` edge function). Remove the `set-pin` step and related code from Index.tsx.
+
+### Files to Modify
 
 | File | Change |
 |------|--------|
-| `supabase/functions/send-timesheet-report/index.ts` | Fix query to use `clock_employees`, add email sending via `enqueue_email`, log to `email_send_log` |
-| `src/pages/SettingsPage.tsx` | Add "Send Report Now" button |
-| Database (pg_cron via insert) | Schedule weekly Monday 6 AM ET cron job |
+| `src/pages/Index.tsx` | Full redesign: remove name list, show PIN pad + "Clock In/Out" button + "Inventory" button. Remove set-pin flow. |
+| `supabase/functions/clock-action/index.ts` | Support PIN-only lookup (find employee by PIN instead of requiring employee ID) |
+| `supabase/functions/pin-login/index.ts` | Minor: support PIN-only lookup for inventory access |
 
-### How It All Connects
+### How the New Flow Works
 
-- **Data source**: `time_entries` table (populated every time someone clocks in/out via the time clock on the homepage)
-- **Employee names**: Pulled from `clock_employees.full_name` (works for all employees, linked or not)
-- **Recipients**: Pulled from `timesheet_email_recipients` where `active = true` (managed in Settings)
-- **Delivery**: Through your verified `notify.wetzelsofaugusta.com` domain via the existing email queue
-- **Schedule**: Automatic every Monday morning, plus manual "Send Now" option
+```text
+HOME SCREEN
+┌─────────────────────┐
+│   10:30 AM          │
+│   Monday, Mar 30    │
+│                     │
+│     ● ● ○ ○        │
+│                     │
+│   [1] [2] [3]      │
+│   [4] [5] [6]      │
+│   [7] [8] [9]      │
+│   [C] [0] [⌫]      │
+│                     │
+│  [ Clock In / Out ] │
+│                     │
+│  [ 📦 Inventory ]   │
+│                     │
+│         Log in      │
+└─────────────────────┘
+
+Clock In/Out: PIN → clock-action (lookup by PIN) → success/fail screen
+Inventory:    PIN → pin-login (check inventory permission) → /dashboard/inventory
+```
 
