@@ -61,6 +61,25 @@ const SettingsPage = () => {
     toast.success("Recipient removed");
   };
 
+  const sendReportNow = async () => {
+    setSendingReport(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("send-timesheet-report", {
+        body: {},
+      });
+      if (error) throw error;
+      if (data?.success) {
+        toast.success(`Report sent to ${data.recipientsSent} recipient(s)`);
+      } else {
+        toast.error(data?.message || "Failed to send report");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to send report");
+    } finally {
+      setSendingReport(false);
+    }
+  };
+
   return (
     <div className="space-y-6 max-w-2xl">
       <h2 className="text-2xl font-bold">Settings</h2>
