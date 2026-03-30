@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, Mail } from "lucide-react";
+import { Plus, Trash2, Mail, Send, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 const SettingsPage = () => {
@@ -14,6 +14,7 @@ const SettingsPage = () => {
   const [recipients, setRecipients] = useState<any[]>([]);
   const [newEmail, setNewEmail] = useState("");
   const [newName, setNewName] = useState("");
+  const [sendingReport, setSendingReport] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -60,6 +61,25 @@ const SettingsPage = () => {
     toast.success("Recipient removed");
   };
 
+  const sendReportNow = async () => {
+    setSendingReport(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("send-timesheet-report", {
+        body: {},
+      });
+      if (error) throw error;
+      if (data?.success) {
+        toast.success(`Report sent to ${data.recipientsSent} recipient(s)`);
+      } else {
+        toast.error(data?.message || "Failed to send report");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to send report");
+    } finally {
+      setSendingReport(false);
+    }
+  };
+
   return (
     <div className="space-y-6 max-w-2xl">
       <h2 className="text-2xl font-bold">Settings</h2>
@@ -92,10 +112,14 @@ const SettingsPage = () => {
             Timesheet Email Recipients
           </CardTitle>
           <CardDescription>
-            Auto-generated weekly timesheets will be emailed to these addresses
+            Auto-generated weekly timesheets will be emailed to these addresses every Monday at 6:00 AM ET
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          <Button onClick={sendReportNow} disabled={sendingReport || recipients.length === 0} variant="outline" className="w-full">
+            {sendingReport ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+            {sendingReport ? "Sending..." : "Send Report Now (Last 7 Days)"}
+          </Button>
           <div className="space-y-2">
             {recipients.map((r: any) => (
               <div key={r.id} className="flex items-center justify-between p-3 bg-muted rounded-lg">
