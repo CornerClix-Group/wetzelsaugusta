@@ -1,5 +1,6 @@
 /index.html
   Cache-Control: no-cache, no-store, must-revalidate
 
-/manifest.json
+/manifest.webmanifest
   Cache-Control: no-cache
+  Content-Type: application/manifest+json
