@@ -1,8 +1,10 @@
+import { Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import AppLoadingScreen from "@/components/AppLoadingScreen";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import DashboardLayout from "./components/DashboardLayout";
@@ -25,22 +27,24 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/dashboard" element={<DashboardLayout />}>
-            <Route index element={<Dashboard />} />
-            <Route path="timeclock" element={<TimeClock />} />
-            <Route path="compliance" element={<Compliance />} />
-            <Route path="inventory" element={<Inventory />} />
-            <Route path="hr-onboarding" element={<HROnboarding />} />
-            <Route path="trucks" element={<Trucks />} />
-            <Route path="employees" element={<Employees />} />
-            <Route path="schedule" element={<Schedule />} />
-            <Route path="settings" element={<SettingsPage />} />
-          </Route>
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <Suspense fallback={<AppLoadingScreen />}>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/dashboard" element={<DashboardLayout />}>
+              <Route index element={<Dashboard />} />
+              <Route path="timeclock" element={<TimeClock />} />
+              <Route path="compliance" element={<Compliance />} />
+              <Route path="inventory" element={<Inventory />} />
+              <Route path="hr-onboarding" element={<HROnboarding />} />
+              <Route path="trucks" element={<Trucks />} />
+              <Route path="employees" element={<Employees />} />
+              <Route path="schedule" element={<Schedule />} />
+              <Route path="settings" element={<SettingsPage />} />
+            </Route>
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Suspense>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
