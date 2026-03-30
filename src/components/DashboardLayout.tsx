@@ -19,7 +19,6 @@ import {
   SidebarContent,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -28,6 +27,8 @@ import {
 } from "@/components/ui/sidebar";
 import { NavLink } from "@/components/NavLink";
 import { toast } from "sonner";
+import MobileBottomNav from "@/components/MobileBottomNav";
+import AppLoadingScreen from "@/components/AppLoadingScreen";
 
 const allMenuItems = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard, permissionKey: null, alwaysVisible: true },
@@ -69,7 +70,6 @@ const DashboardLayout = () => {
     if (!user) return;
 
     const fetchRolesAndPermissions = async () => {
-      // Fetch roles
       const { data: rolesData } = await supabase
         .from("user_roles")
         .select("role")
@@ -80,7 +80,6 @@ const DashboardLayout = () => {
       setIsElevated(elevated);
       setIsBusinessManager(roles.includes("business_manager"));
 
-      // If not owner/franchise_owner, check individual permissions via linked clock_employee
       if (!roles.includes("owner") && !roles.includes("franchise_owner")) {
         const { data: clockEmp } = await supabase
           .from("clock_employees")
@@ -98,7 +97,6 @@ const DashboardLayout = () => {
           setGrantedPermissions((perms || []).map((p) => p.permission));
         }
       } else {
-        // Owners see everything
         setGrantedPermissions([]);
       }
     };
@@ -108,37 +106,22 @@ const DashboardLayout = () => {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    toast.success("Signed out successfully");
+    toast.success("Signed out");
     navigate("/auth");
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-muted-foreground">Loading...</div>
-      </div>
-    );
+    return <AppLoadingScreen />;
   }
 
-  // Build visible menu items
   const menuItems = allMenuItems.filter((item) => {
-    // Always-visible items (Dashboard, Time Clock, Settings)
     if (item.alwaysVisible) return true;
-
-    // Owners/franchise owners see everything
     if (isElevated && (grantedPermissions.length === 0)) return true;
-
-    // For non-owner elevated roles (manager, shift_lead) and business managers,
-    // check individual permissions
     if (item.permissionKey && grantedPermissions.includes(item.permissionKey)) return true;
-
-    // Business managers always see HR & Onboarding
     if (isBusinessManager && item.permissionKey === "hr_onboarding") return true;
-
     return false;
   });
 
-  // Derive page title from current route
   const currentItem = allMenuItems.find((item) =>
     item.url === "/dashboard"
       ? location.pathname === "/dashboard"
@@ -149,15 +132,15 @@ const DashboardLayout = () => {
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
-        <Sidebar className="border-r" collapsible="icon">
+        {/* Desktop sidebar — hidden on mobile */}
+        <Sidebar className="border-r hidden md:flex" collapsible="icon">
           <SidebarContent>
-            <div className="p-6 border-b border-sidebar-border">
-              <h1 className="text-xl font-bold text-sidebar-foreground">Wetzels of Augusta</h1>
-              <p className="text-sm text-sidebar-accent-foreground">Operations Platform</p>
+            <div className="px-5 py-4 border-b border-sidebar-border">
+              <h1 className="text-base font-semibold text-sidebar-foreground tracking-tight">Wetzels of Augusta</h1>
+              <p className="text-xs text-sidebar-accent-foreground/60 mt-0.5">Operations</p>
             </div>
 
             <SidebarGroup>
-              <SidebarGroupLabel>Navigation</SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
                   {menuItems.map((item) => (
@@ -166,11 +149,11 @@ const DashboardLayout = () => {
                         <NavLink
                           to={item.url}
                           end={item.url === "/dashboard"}
-                          className="hover:bg-sidebar-accent"
+                          className="hover:bg-sidebar-accent transition-colors duration-150"
                           activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
                         >
-                          <item.icon className="mr-2 h-4 w-4" />
-                          <span>{item.title}</span>
+                          <item.icon className="mr-2.5 h-4 w-4" />
+                          <span className="text-sm">{item.title}</span>
                         </NavLink>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
@@ -179,35 +162,40 @@ const DashboardLayout = () => {
               </SidebarGroupContent>
             </SidebarGroup>
 
-            <div className="mt-auto p-4 border-t border-sidebar-border">
-              <div className="text-sm text-sidebar-accent-foreground mb-2 truncate">
+            <div className="mt-auto px-4 py-3 border-t border-sidebar-border">
+              <div className="text-xs text-sidebar-accent-foreground/50 mb-2 truncate">
                 {user?.email}
               </div>
               <Button
                 variant="ghost"
                 size="sm"
-                className="w-full text-sidebar-foreground hover:bg-sidebar-accent"
+                className="w-full justify-start text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent text-xs h-8"
                 onClick={handleLogout}
               >
-                <LogOut className="mr-2 h-4 w-4" />
+                <LogOut className="mr-2 h-3.5 w-3.5" />
                 Sign Out
               </Button>
             </div>
           </SidebarContent>
         </Sidebar>
 
-        <div className="flex-1 flex flex-col">
-          <header className="h-16 border-b bg-card flex items-center px-6">
-            <SidebarTrigger />
-            <h2 className="text-lg font-semibold ml-4">{pageTitle}</h2>
+        <div className="flex-1 flex flex-col min-w-0">
+          {/* Top bar */}
+          <header className="h-12 md:h-14 border-b bg-card/80 backdrop-blur-sm flex items-center px-4 md:px-6 sticky top-0 z-40">
+            <SidebarTrigger className="hidden md:flex" />
+            <h2 className="text-base font-semibold tracking-tight md:ml-3">{pageTitle}</h2>
           </header>
 
-          <main className="flex-1 p-4 sm:p-6 bg-muted overflow-y-auto">
-            <div className="max-w-7xl mx-auto">
+          {/* Page content */}
+          <main className="flex-1 overflow-y-auto bg-background">
+            <div className="max-w-7xl mx-auto px-4 py-4 md:px-6 md:py-6 pb-safe-nav md:pb-6 animate-page-enter">
               <Outlet />
             </div>
           </main>
         </div>
+
+        {/* Mobile bottom nav */}
+        <MobileBottomNav menuItems={menuItems} />
       </div>
     </SidebarProvider>
   );
