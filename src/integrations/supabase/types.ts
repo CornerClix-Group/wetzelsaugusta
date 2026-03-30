@@ -1028,7 +1028,7 @@ export type Database = {
           clock_out: string | null
           clock_out_location: string | null
           created_at: string
-          employee_id: string
+          employee_id: string | null
           id: string
           notes: string | null
           truck_id: string | null
@@ -1040,7 +1040,7 @@ export type Database = {
           clock_out?: string | null
           clock_out_location?: string | null
           created_at?: string
-          employee_id: string
+          employee_id?: string | null
           id?: string
           notes?: string | null
           truck_id?: string | null
@@ -1052,7 +1052,7 @@ export type Database = {
           clock_out?: string | null
           clock_out_location?: string | null
           created_at?: string
-          employee_id?: string
+          employee_id?: string | null
           id?: string
           notes?: string | null
           truck_id?: string | null
