@@ -89,7 +89,7 @@ Deno.serve(async (req) => {
       });
     } else {
       // Clock in - use linked_user_id for employee_id FK, fall back to clock_employee_id
-      const profileId = employee.linked_user_id || clock_employee_id;
+      const profileId = employee.linked_user_id || null;
       const clockIn = new Date().toISOString();
       const { data: newEntry, error: insertError } = await supabase
         .from("time_entries")
