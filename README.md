@@ -71,3 +71,38 @@ Yes, you can!
 To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+
+## Mobile Packaging Notes (Capacitor)
+
+### Icon Files
+All PWA and app icons live in the `/public` directory:
+- `icon-192.png` — 192×192 standard icon
+- `icon-512.png` — 512×512 standard icon
+- `maskable-icon-512.png` — 512×512 maskable icon (safe-zone padding)
+- `apple-touch-icon.png` — iOS home screen icon
+
+For Capacitor native builds, generate platform-specific icons with:
+```sh
+npx capacitor-assets generate
+```
+Place source assets in `resources/icon.png` (1024×1024) and `resources/splash.png` (2732×2732).
+
+### Splash Screen Assets
+Splash screens for native builds should go in `resources/splash.png`. Capacitor Assets will auto-generate all required sizes.
+
+### Environment / Config Concerns
+- The Vite build output (`dist/`) is the web root for Capacitor's WebView.
+- Routing uses `BrowserRouter` — Capacitor works with this via `server.url` in `capacitor.config.ts`.
+- All API calls use `import.meta.env.VITE_SUPABASE_PROJECT_ID` — this is baked in at build time and works in WebView.
+- The service worker is disabled in dev/preview. It only activates in production builds.
+- Safe-area insets are handled via CSS `env(safe-area-inset-*)` variables.
+
+### Quick Start for Capacitor
+```sh
+npm install @capacitor/core @capacitor/cli @capacitor/ios @capacitor/android
+npx cap init
+npx cap add ios    # or android
+npm run build
+npx cap sync
+npx cap run ios    # or android
+```
