@@ -88,12 +88,13 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     } else {
-      // Clock in
+      // Clock in - use linked_user_id for employee_id FK, fall back to clock_employee_id
+      const profileId = employee.linked_user_id || clock_employee_id;
       const clockIn = new Date().toISOString();
       const { data: newEntry, error: insertError } = await supabase
         .from("time_entries")
         .insert({
-          employee_id: employee.id,
+          employee_id: profileId,
           clock_employee_id: clock_employee_id,
           clock_in: clockIn,
           clock_in_location: "Augusta, GA",
