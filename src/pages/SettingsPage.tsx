@@ -14,6 +14,7 @@ const SettingsPage = () => {
   const [recipients, setRecipients] = useState<any[]>([]);
   const [newEmail, setNewEmail] = useState("");
   const [newName, setNewName] = useState("");
+  const [sendingReport, setSendingReport] = useState(false);
 
   useEffect(() => {
     const load = async () => {
