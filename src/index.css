@@ -63,6 +63,12 @@ All colors MUST be HSL.
     --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
     --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
     --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+
+    /* Safe area insets for notch/home indicator */
+    --safe-area-top: env(safe-area-inset-top, 0px);
+    --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-area-left: env(safe-area-inset-left, 0px);
+    --safe-area-right: env(safe-area-inset-right, 0px);
   }
 }
 
@@ -71,7 +77,33 @@ All colors MUST be HSL.
     @apply border-border;
   }
 
+  html {
+    /* Prevent overscroll bounce on iOS */
+    overscroll-behavior: none;
+    -webkit-text-size-adjust: 100%;
+  }
+
   body {
     @apply bg-background text-foreground;
+    /* Prevent pull-to-refresh in standalone */
+    overscroll-behavior-y: contain;
+    -webkit-tap-highlight-color: transparent;
+    /* Safe area padding */
+    padding-top: var(--safe-area-top);
+    padding-bottom: var(--safe-area-bottom);
+    padding-left: var(--safe-area-left);
+    padding-right: var(--safe-area-right);
+  }
+
+  /* Prevent iOS zoom on form inputs */
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Touch-friendly minimum sizes */
+@layer utilities {
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px];
   }
 }

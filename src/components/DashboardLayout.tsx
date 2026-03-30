@@ -202,7 +202,7 @@ const DashboardLayout = () => {
             <h2 className="text-lg font-semibold ml-4">{pageTitle}</h2>
           </header>
 
-          <main className="flex-1 p-6 bg-muted">
+          <main className="flex-1 p-4 sm:p-6 bg-muted overflow-y-auto">
             <div className="max-w-7xl mx-auto">
               <Outlet />
             </div>
