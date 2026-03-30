@@ -1,77 +1,59 @@
 import { useNavigate } from "react-router-dom";
 import { Clock, ClipboardCheck, Truck, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+
+const stats = [
+  { label: "Active Employees", value: "0", sub: "No one clocked in", icon: Users },
+  { label: "Active Trucks", value: "0", sub: "No trucks running", icon: Truck },
+  { label: "Pending Checklists", value: "0", sub: "All complete", icon: ClipboardCheck },
+  { label: "Today's Hours", value: "0h", sub: "Total logged today", icon: Clock },
+];
 
 const Dashboard = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="space-y-6">
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Employees</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">0</div>
-            <p className="text-xs text-muted-foreground">No employees clocked in</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Trucks</CardTitle>
-            <Truck className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">0</div>
-            <p className="text-xs text-muted-foreground">No trucks in operation</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending Checklists</CardTitle>
-            <ClipboardCheck className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">0</div>
-            <p className="text-xs text-muted-foreground">All checklists completed</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Today's Hours</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">0h</div>
-            <p className="text-xs text-muted-foreground">Total hours logged today</p>
-          </CardContent>
-        </Card>
+    <div className="space-y-5">
+      {/* Stats grid */}
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        {stats.map((s) => (
+          <Card key={s.label} className="border-0 shadow-sm">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-medium text-muted-foreground">{s.label}</span>
+                <s.icon className="h-3.5 w-3.5 text-muted-foreground/50" />
+              </div>
+              <div className="text-2xl font-semibold tracking-tight">{s.value}</div>
+              <p className="text-[11px] text-muted-foreground/60 mt-0.5">{s.sub}</p>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Welcome to Wetzels of Augusta</CardTitle>
-          <CardDescription>
-            Your enterprise operations platform for Wetzel's Pretzels Truck of Augusta
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground mb-4">
-            Get started by setting up your trucks, employees, and operational checklists.
+      {/* Welcome card */}
+      <Card className="border-0 shadow-sm">
+        <CardContent className="p-5">
+          <h3 className="text-base font-semibold tracking-tight">Welcome to Wetzels of Augusta</h3>
+          <p className="text-sm text-muted-foreground mt-1 mb-4">
+            Set up your trucks, employees, and operational checklists to get started.
           </p>
-          <div className="flex gap-2">
-            <Button onClick={() => navigate("/dashboard/trucks")}>
-              <Truck className="mr-2 h-4 w-4" />
+          <div className="flex flex-wrap gap-2">
+            <Button
+              size="sm"
+              className="h-9 rounded-lg text-xs font-medium"
+              onClick={() => navigate("/dashboard/trucks")}
+            >
+              <Truck className="mr-1.5 h-3.5 w-3.5" />
               Add Truck
             </Button>
-            <Button variant="outline" onClick={() => navigate("/dashboard/employees")}>
-              <Users className="mr-2 h-4 w-4" />
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-9 rounded-lg text-xs font-medium"
+              onClick={() => navigate("/dashboard/employees")}
+            >
+              <Users className="mr-1.5 h-3.5 w-3.5" />
               Add Employee
             </Button>
           </div>

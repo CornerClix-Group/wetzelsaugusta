@@ -158,68 +158,70 @@ const Index = () => {
     }
   };
 
-  const promptText = step === "inventory-pin" ? "Enter Manager PIN for Inventory" : "Enter Your PIN";
+  const promptText = step === "inventory-pin" ? "Manager PIN for Inventory" : "Enter PIN";
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-primary via-primary to-[hsl(215,80%,22%)] flex flex-col">
-      {/* Header */}
-      <header className="flex items-center justify-between px-6 py-5 border-b border-primary-foreground/10">
-        <div className="flex items-center gap-3">
-          <div className="h-11 w-11 rounded-xl bg-secondary flex items-center justify-center shadow-md">
-            <Clock className="h-5 w-5 text-secondary-foreground" />
-          </div>
+    <div className="min-h-screen bg-primary flex flex-col">
+      {/* Compact header */}
+      <header className="flex items-center justify-between px-5 pt-[max(1rem,var(--safe-area-top))] pb-3">
+        <div className="flex items-center gap-2.5">
+          <img src="/icon-192.png" alt="" width={36} height={36} className="rounded-lg" />
           <div>
-            <h1 className="text-lg font-bold text-primary-foreground tracking-tight">Wetzels of Augusta</h1>
-            <p className="text-xs text-primary-foreground/50 font-medium">Time Clock Terminal</p>
+            <h1 className="text-sm font-semibold text-primary-foreground tracking-tight">Wetzels of Augusta</h1>
+            <p className="text-[11px] text-primary-foreground/40 font-medium">Time Clock</p>
           </div>
         </div>
         <div className="text-right">
-          <p className="text-4xl font-mono font-bold text-primary-foreground tabular-nums">
+          <p className="text-3xl font-mono font-semibold text-primary-foreground tabular-nums tracking-tight">
             {currentTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
           </p>
-          <p className="text-sm text-primary-foreground/50 font-medium">
-            {currentTime.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
+          <p className="text-[11px] text-primary-foreground/40 font-medium">
+            {currentTime.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
           </p>
         </div>
       </header>
 
       {/* Main content */}
-      <div className="flex-1 flex items-center justify-center p-6">
-        <div className="w-full max-w-sm">
+      <div className="flex-1 flex items-center justify-center px-5 pb-safe">
+        <div className="w-full max-w-[320px]">
 
-          {/* PIN Entry (clock or inventory) */}
+          {/* PIN Entry */}
           {(step === "pin" || step === "inventory-pin") && (
-            <div className="space-y-6">
+            <div className="space-y-5 animate-page-enter">
               {step === "inventory-pin" && (
                 <button
                   onClick={resetToStart}
-                  className="text-primary-foreground/50 hover:text-primary-foreground/80 text-sm font-medium"
+                  className="text-primary-foreground/40 hover:text-primary-foreground/70 text-sm font-medium transition-colors"
                 >
-                  ← Back to Clock
+                  ← Back
                 </button>
               )}
-              <div className="text-center space-y-5">
-                <p className="text-primary-foreground/60 text-sm font-semibold tracking-widest uppercase">
+
+              <div className="text-center space-y-4">
+                <p className="text-primary-foreground/50 text-xs font-semibold tracking-[0.2em] uppercase">
                   {promptText}
                 </p>
-                <div className="flex justify-center gap-4">
+                <div className="flex justify-center gap-3.5">
                   {Array.from({ length: 4 }, (_, i) => (
                     <div
                       key={i}
-                      className={`h-5 w-5 rounded-full transition-all duration-200 ${
-                        i < pin.length ? "bg-secondary scale-125 shadow-md shadow-secondary/40" : "bg-primary-foreground/20"
+                      className={`h-3 w-3 rounded-full transition-all duration-200 ${
+                        i < pin.length
+                          ? "bg-secondary scale-110"
+                          : "bg-primary-foreground/15"
                       }`}
                     />
                   ))}
                 </div>
               </div>
+
               <PinPad onInput={handlePinInput} onClear={clearPin} onBackspace={backspace} />
 
               {step === "pin" ? (
-                <div className="space-y-3">
+                <div className="space-y-2.5 pt-1">
                   <Button
                     size="lg"
-                    className="w-full h-16 text-lg font-bold rounded-xl shadow-lg bg-secondary hover:bg-secondary/90 text-secondary-foreground"
+                    className="w-full h-[52px] text-[15px] font-semibold rounded-xl bg-secondary hover:bg-secondary/90 text-secondary-foreground transition-all duration-150 active:scale-[0.98]"
                     onClick={handleClockAction}
                     disabled={pin.length !== 4 || loading}
                   >
@@ -227,189 +229,173 @@ const Index = () => {
                   </Button>
                   <Button
                     size="lg"
-                    variant="outline"
-                    className="w-full h-14 text-base font-bold rounded-xl border-primary-foreground/20 bg-primary-foreground/5 hover:bg-primary-foreground/10 text-primary-foreground"
+                    variant="ghost"
+                    className="w-full h-[48px] text-sm font-medium rounded-xl text-primary-foreground/50 hover:text-primary-foreground/80 hover:bg-primary-foreground/5 transition-all duration-150"
                     onClick={() => { setPin(""); setStep("inventory-pin"); }}
                   >
-                    <Package className="h-5 w-5 mr-2" />
-                    Inventory
+                    <Package className="h-4 w-4 mr-2 opacity-60" />
+                    Inventory Access
                   </Button>
                 </div>
               ) : (
                 <Button
                   size="lg"
-                  className="w-full h-16 text-lg font-bold rounded-xl shadow-lg bg-secondary hover:bg-secondary/90 text-secondary-foreground"
+                  className="w-full h-[52px] text-[15px] font-semibold rounded-xl bg-secondary hover:bg-secondary/90 text-secondary-foreground transition-all duration-150 active:scale-[0.98]"
                   onClick={handleInventoryAccess}
                   disabled={pin.length !== 4 || loading}
                 >
-                  {loading ? <Spinner /> : (
-                    <span className="flex items-center gap-2">
-                      <Package className="h-5 w-5" />
-                      Open Inventory
-                    </span>
-                  )}
+                  {loading ? <Spinner /> : "Open Inventory"}
                 </Button>
               )}
             </div>
           )}
 
-          {/* Action Choice (promoted employees after clock action) */}
+          {/* Action Choice */}
           {step === "action-choice" && (
-            <Card className="border-0 shadow-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-300">
-              <CardContent className={`p-8 text-center ${
-                lastAction === "in" ? "bg-[hsl(var(--success))]" : "bg-secondary"
-              }`}>
-                <div className={`mx-auto mb-4 h-16 w-16 rounded-full flex items-center justify-center ${
-                  lastAction === "in" ? "bg-[hsl(var(--success-foreground))]/20" : "bg-secondary-foreground/10"
-                }`}>
-                  {lastAction === "in" ? (
-                    <LogIn className="h-8 w-8 text-[hsl(var(--success-foreground))]" />
-                  ) : (
-                    <LogOut className="h-8 w-8 text-secondary-foreground" />
-                  )}
-                </div>
-                <h2 className={`text-2xl font-bold mb-1 ${
-                  lastAction === "in" ? "text-[hsl(var(--success-foreground))]" : "text-secondary-foreground"
-                }`}>
-                  {lastAction === "in" ? "Clocked In" : "Clocked Out"}
-                </h2>
-                <p className={`text-lg font-semibold mb-4 ${
-                  lastAction === "in" ? "text-[hsl(var(--success-foreground))]/90" : "text-secondary-foreground/80"
-                }`}>
-                  {employeeName}
-                </p>
-                {lastAction === "out" && hoursWorked && (
-                  <div className="mb-4 inline-flex items-center gap-2 bg-secondary-foreground/10 rounded-lg px-4 py-2">
-                    <Clock className="h-4 w-4 text-secondary-foreground/70" />
-                    <span className="text-sm font-semibold text-secondary-foreground">{hoursWorked} hours worked</span>
-                  </div>
-                )}
-                <div className="space-y-3 mt-4">
+            <div className="animate-page-enter">
+              <ResultCard
+                action={lastAction}
+                employeeName={employeeName}
+                hoursWorked={hoursWorked}
+              >
+                <div className="space-y-2 mt-5">
                   <Button
-                    className="w-full h-14 text-base font-bold rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground"
+                    className="w-full h-[48px] text-sm font-semibold rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground transition-all duration-150 active:scale-[0.98]"
                     onClick={handleOpenDashboard}
                     disabled={loading}
                   >
                     {loading ? <Spinner /> : (
-                      <span className="flex items-center gap-2">
-                        <LayoutDashboard className="h-5 w-5" />
+                      <>
+                        <LayoutDashboard className="h-4 w-4 mr-2" />
                         Open Dashboard
-                      </span>
+                      </>
                     )}
                   </Button>
                   <Button
                     variant="ghost"
-                    className="w-full h-12 text-sm font-medium rounded-xl text-primary-foreground/60 hover:text-primary-foreground/80 hover:bg-primary-foreground/10"
+                    className="w-full h-10 text-xs font-medium rounded-xl text-muted-foreground hover:text-foreground transition-colors"
                     onClick={resetToStart}
                   >
-                    Done — Return to Terminal
+                    Done
                   </Button>
                 </div>
-              </CardContent>
-            </Card>
+              </ResultCard>
+            </div>
           )}
 
-          {/* Result (basic employees) */}
+          {/* Result */}
           {step === "result" && (
-            <Card className="border-0 shadow-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-300">
-              <CardContent className={`p-8 text-center ${
-                lastAction === "in" ? "bg-[hsl(var(--success))]" : "bg-secondary"
-              }`}>
-                <div className={`mx-auto mb-4 h-16 w-16 rounded-full flex items-center justify-center ${
-                  lastAction === "in" ? "bg-[hsl(var(--success-foreground))]/20" : "bg-secondary-foreground/10"
-                }`}>
-                  {lastAction === "in" ? (
-                    <LogIn className="h-8 w-8 text-[hsl(var(--success-foreground))]" />
-                  ) : (
-                    <LogOut className="h-8 w-8 text-secondary-foreground" />
-                  )}
+            <div className="animate-page-enter">
+              <ResultCard
+                action={lastAction}
+                employeeName={employeeName}
+                hoursWorked={hoursWorked}
+                clockInTime={clockInTime}
+              >
+                <div className="mt-5 flex items-center justify-center gap-1.5">
+                  <div className="h-1 w-1 rounded-full bg-muted-foreground/30 animate-pulse" />
+                  <span className="text-xs text-muted-foreground/50">Returning to terminal</span>
                 </div>
-                <h2 className={`text-2xl font-bold mb-1 ${
-                  lastAction === "in" ? "text-[hsl(var(--success-foreground))]" : "text-secondary-foreground"
-                }`}>
-                  {lastAction === "in" ? "Clocked In" : "Clocked Out"}
-                </h2>
-                <p className={`text-lg font-semibold mb-2 ${
-                  lastAction === "in" ? "text-[hsl(var(--success-foreground))]/90" : "text-secondary-foreground/80"
-                }`}>
-                  {employeeName}
-                </p>
-                {lastAction === "in" && clockInTime && (
-                  <p className="text-sm text-[hsl(var(--success-foreground))]/70">
-                    Started at {new Date(clockInTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                  </p>
-                )}
-                {lastAction === "out" && hoursWorked && (
-                  <div className="mt-3 inline-flex items-center gap-2 bg-secondary-foreground/10 rounded-lg px-4 py-2">
-                    <Clock className="h-4 w-4 text-secondary-foreground/70" />
-                    <span className="text-sm font-semibold text-secondary-foreground">{hoursWorked} hours worked</span>
-                  </div>
-                )}
-                <div className="mt-6 flex items-center justify-center gap-1 text-xs opacity-50">
-                  <CheckCircle2 className={`h-3 w-3 ${lastAction === "in" ? "text-[hsl(var(--success-foreground))]" : "text-secondary-foreground"}`} />
-                  <span className={lastAction === "in" ? "text-[hsl(var(--success-foreground))]" : "text-secondary-foreground"}>
-                    Returning to terminal...
-                  </span>
-                </div>
-              </CardContent>
-            </Card>
+              </ResultCard>
+            </div>
           )}
         </div>
       </div>
 
       {/* Footer */}
-      <footer className="pb-4 pt-2 text-center">
+      <footer className="pb-safe text-center py-2">
         <button
           onClick={() => navigate("/auth")}
-          className="text-xs text-primary-foreground/20 hover:text-primary-foreground/40 transition-colors"
+          className="text-[11px] text-primary-foreground/15 hover:text-primary-foreground/30 transition-colors"
         >
-          Log in
+          Admin Login
         </button>
       </footer>
     </div>
   );
 };
 
+/* ─── Sub-components ─── */
+
 const Spinner = () => (
   <span className="flex items-center gap-2">
-    <span className="h-4 w-4 border-2 border-secondary-foreground/30 border-t-secondary-foreground rounded-full animate-spin" />
-    Processing...
+    <span className="h-3.5 w-3.5 border-2 border-current/20 border-t-current rounded-full animate-spin" />
   </span>
 );
 
+const ResultCard = ({
+  action,
+  employeeName,
+  hoursWorked,
+  clockInTime,
+  children,
+}: {
+  action: "in" | "out" | null;
+  employeeName: string;
+  hoursWorked?: string;
+  clockInTime?: string;
+  children?: React.ReactNode;
+}) => (
+  <Card className="border-0 shadow-xl overflow-hidden">
+    <CardContent className="p-6 text-center">
+      <div className={`mx-auto mb-3 h-12 w-12 rounded-full flex items-center justify-center ${
+        action === "in" ? "bg-[hsl(var(--success))]/10" : "bg-secondary/10"
+      }`}>
+        {action === "in" ? (
+          <LogIn className="h-5 w-5 text-[hsl(var(--success))]" />
+        ) : (
+          <LogOut className="h-5 w-5 text-secondary" />
+        )}
+      </div>
+      <h2 className="text-lg font-semibold text-foreground">
+        {action === "in" ? "Clocked In" : "Clocked Out"}
+      </h2>
+      <p className="text-sm text-muted-foreground mt-0.5">{employeeName}</p>
+      {action === "in" && clockInTime && (
+        <p className="text-xs text-muted-foreground/60 mt-1">
+          {new Date(clockInTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+        </p>
+      )}
+      {action === "out" && hoursWorked && (
+        <div className="mt-3 inline-flex items-center gap-1.5 bg-muted rounded-lg px-3 py-1.5">
+          <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+          <span className="text-xs font-medium text-foreground">{hoursWorked}h</span>
+        </div>
+      )}
+      {children}
+    </CardContent>
+  </Card>
+);
+
 const PinPad = ({ onInput, onClear, onBackspace }: { onInput: (d: string) => void; onClear: () => void; onBackspace: () => void }) => (
-  <div className="grid grid-cols-3 gap-2.5">
+  <div className="grid grid-cols-3 gap-2">
     {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
-      <Button
+      <button
         key={num}
-        variant="ghost"
         onClick={() => onInput(num.toString())}
-        className="h-16 text-2xl font-semibold text-primary-foreground bg-primary-foreground/10 hover:bg-primary-foreground/20 hover:text-primary-foreground rounded-xl transition-all active:scale-95 border border-primary-foreground/5"
+        className="h-[56px] text-xl font-medium text-primary-foreground rounded-xl bg-primary-foreground/8 hover:bg-primary-foreground/12 active:bg-primary-foreground/16 active:scale-[0.97] transition-all duration-100 select-none"
       >
         {num}
-      </Button>
+      </button>
     ))}
-    <Button
-      variant="ghost"
+    <button
       onClick={onClear}
-      className="h-16 text-xs font-bold uppercase tracking-wider text-red-300 bg-red-500/10 hover:bg-red-500/20 hover:text-red-200 rounded-xl border border-red-500/10"
+      className="h-[56px] text-[10px] font-bold uppercase tracking-widest text-primary-foreground/30 rounded-xl hover:bg-primary-foreground/5 active:bg-primary-foreground/8 transition-all duration-100 select-none"
     >
       Clear
-    </Button>
-    <Button
-      variant="ghost"
+    </button>
+    <button
       onClick={() => onInput("0")}
-      className="h-16 text-2xl font-semibold text-primary-foreground bg-primary-foreground/10 hover:bg-primary-foreground/20 hover:text-primary-foreground rounded-xl transition-all active:scale-95 border border-primary-foreground/5"
+      className="h-[56px] text-xl font-medium text-primary-foreground rounded-xl bg-primary-foreground/8 hover:bg-primary-foreground/12 active:bg-primary-foreground/16 active:scale-[0.97] transition-all duration-100 select-none"
     >
       0
-    </Button>
-    <Button
-      variant="ghost"
+    </button>
+    <button
       onClick={onBackspace}
-      className="h-16 text-primary-foreground/60 bg-primary-foreground/10 hover:bg-primary-foreground/20 rounded-xl border border-primary-foreground/5"
+      className="h-[56px] flex items-center justify-center text-primary-foreground/40 rounded-xl hover:bg-primary-foreground/5 active:bg-primary-foreground/8 transition-all duration-100 select-none"
     >
       <Delete className="h-5 w-5" />
-    </Button>
+    </button>
   </div>
 );
 

@@ -2,54 +2,45 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
-
 @layer base {
   :root {
     /* Wetzel's Pretzels Official Brand Colors */
-    /* Ochre #CF7517 → HSL 30 80% 45% | Yale Blue #084694 → HSL 215 90% 31% */
-    --background: 0 0% 99%;
-    --foreground: 215 40% 20%;
+    --background: 0 0% 98.5%;
+    --foreground: 220 20% 14%;
     
     --card: 0 0% 100%;
-    --card-foreground: 215 40% 20%;
+    --card-foreground: 220 20% 14%;
     
     --popover: 0 0% 100%;
-    --popover-foreground: 215 40% 20%;
+    --popover-foreground: 220 20% 14%;
     
-    /* Wetzel's Yale Blue as primary - authoritative, professional */
     --primary: 215 90% 31%;
     --primary-foreground: 0 0% 100%;
     
-    /* Wetzel's Ochre/Orange as secondary - warm, energetic */
     --secondary: 30 80% 45%;
     --secondary-foreground: 0 0% 100%;
     
-    --muted: 215 15% 95%;
-    --muted-foreground: 215 16% 47%;
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 10% 46%;
     
-    /* Ochre accent for highlights */
     --accent: 30 80% 45%;
     --accent-foreground: 0 0% 100%;
     
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
     
-    --border: 215 15% 90%;
-    --input: 215 15% 90%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
     --ring: 215 90% 31%;
     
-    --radius: 0.5rem;
+    --radius: 0.75rem;
     
-    /* Status colors for compliance */
     --success: 142 71% 45%;
     --success-foreground: 0 0% 100%;
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
     
-    /* Sidebar - Yale Blue Navy Theme */
+    /* Sidebar */
     --sidebar-background: 215 90% 31%;
     --sidebar-foreground: 0 0% 98%;
     --sidebar-primary: 30 80% 45%;
@@ -58,13 +49,8 @@ All colors MUST be HSL.
     --sidebar-accent-foreground: 0 0% 98%;
     --sidebar-border: 215 70% 25%;
     --sidebar-ring: 30 80% 45%;
-    
-    /* Enterprise shadows */
-    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
 
-    /* Safe area insets for notch/home indicator */
+    /* Safe area insets */
     --safe-area-top: env(safe-area-inset-top, 0px);
     --safe-area-bottom: env(safe-area-inset-bottom, 0px);
     --safe-area-left: env(safe-area-inset-left, 0px);
@@ -78,32 +64,61 @@ All colors MUST be HSL.
   }
 
   html {
-    /* Prevent overscroll bounce on iOS */
     overscroll-behavior: none;
     -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   body {
     @apply bg-background text-foreground;
-    /* Prevent pull-to-refresh in standalone */
     overscroll-behavior-y: contain;
     -webkit-tap-highlight-color: transparent;
-    /* Safe area padding */
     padding-top: var(--safe-area-top);
     padding-bottom: var(--safe-area-bottom);
     padding-left: var(--safe-area-left);
     padding-right: var(--safe-area-right);
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 
-  /* Prevent iOS zoom on form inputs */
+  /* Prevent iOS zoom on inputs */
   input, select, textarea {
     font-size: 16px !important;
   }
+
+  /* Smoother scrolling everywhere */
+  * {
+    scroll-behavior: smooth;
+  }
+
+  /* Remove default focus outlines, use ring instead */
+  :focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
 }
 
-/* Touch-friendly minimum sizes */
 @layer utilities {
   .touch-target {
     @apply min-h-[44px] min-w-[44px];
   }
+}
+
+/* Page transition */
+@keyframes page-enter {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-page-enter {
+  animation: page-enter 0.2s ease-out;
+}
+
+/* Bottom nav safe area helper */
+.pb-safe {
+  padding-bottom: max(1rem, var(--safe-area-bottom));
+}
+
+.pb-safe-nav {
+  padding-bottom: calc(4rem + var(--safe-area-bottom));
 }
