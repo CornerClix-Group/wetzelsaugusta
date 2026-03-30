@@ -38,9 +38,9 @@ export default defineConfig(({ mode }) => ({
         description: "Operations platform for Wetzel's Pretzels of Augusta",
         start_url: "/",
         display: "standalone",
-        background_color: "#1a365d",
+        background_color: "#ffffff",
         theme_color: "#1a365d",
-        orientation: "any",
+        orientation: "portrait",
         icons: [
           {
             src: "/icon-192.png",
