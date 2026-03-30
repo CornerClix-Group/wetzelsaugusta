@@ -35,7 +35,7 @@ Deno.serve(async (req) => {
     // Validate PIN
     const { data: employee, error: fetchError } = await supabase
       .from("clock_employees")
-      .select("id, full_name, pin_code, role")
+      .select("id, full_name, pin_code, role, linked_user_id")
       .eq("id", clock_employee_id)
       .eq("is_active", true)
       .single();
