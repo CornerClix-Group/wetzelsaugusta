@@ -3,34 +3,24 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Clock, LogIn, LogOut, Settings, Delete, CheckCircle2, ArrowRight, LayoutDashboard, ChevronLeft } from "lucide-react";
+import { Clock, LogIn, LogOut, Package, Delete, CheckCircle2, LayoutDashboard } from "lucide-react";
 import { toast } from "sonner";
 
-type ClockEmployee = {
-  id: string;
-  full_name: string;
-  display_name: string | null;
-  pin_code: string | null;
-  role: string;
-  is_active: boolean;
-};
-
-type Step = "select" | "set-pin" | "enter-pin" | "action-choice" | "result";
+type Step = "pin" | "inventory-pin" | "action-choice" | "result";
 
 const Index = () => {
   const navigate = useNavigate();
-  const [employees, setEmployees] = useState<ClockEmployee[]>([]);
-  const [selectedEmployee, setSelectedEmployee] = useState<ClockEmployee | null>(null);
-  const [step, setStep] = useState<Step>("select");
+  const [step, setStep] = useState<Step>("pin");
   const [pin, setPin] = useState("");
-  const [confirmPin, setConfirmPin] = useState("");
-  const [isConfirming, setIsConfirming] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [loading, setLoading] = useState(false);
   const [lastAction, setLastAction] = useState<"in" | "out" | null>(null);
   const [employeeName, setEmployeeName] = useState("");
   const [hoursWorked, setHoursWorked] = useState("");
   const [clockInTime, setClockInTime] = useState("");
+  const [lastClockEmployeeId, setLastClockEmployeeId] = useState("");
+  const [lastPin, setLastPin] = useState("");
+  const [lastRole, setLastRole] = useState("");
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -38,120 +28,33 @@ const Index = () => {
   }, []);
 
   useEffect(() => {
-    fetchEmployees();
-  }, []);
-
-  // Auto-reset after result
-  useEffect(() => {
     if (step === "result") {
       const timeout = setTimeout(() => resetToStart(), 4000);
       return () => clearTimeout(timeout);
     }
   }, [step]);
 
-  const fetchEmployees = async () => {
-    const { data } = await supabase
-      .from("clock_employees")
-      .select("id, full_name, display_name, pin_code, role, is_active")
-      .eq("is_active", true)
-      .order("full_name");
-    setEmployees(data || []);
-  };
-
   const resetToStart = () => {
-    setStep("select");
-    setSelectedEmployee(null);
+    setStep("pin");
     setPin("");
-    setConfirmPin("");
-    setIsConfirming(false);
     setLastAction(null);
     setEmployeeName("");
     setHoursWorked("");
     setClockInTime("");
-  };
-
-  const handleSelectEmployee = (emp: ClockEmployee) => {
-    setSelectedEmployee(emp);
-    setPin("");
-    setConfirmPin("");
-    setIsConfirming(false);
-    if (emp.pin_code === null) {
-      setStep("set-pin");
-    } else {
-      setStep("enter-pin");
-    }
+    setLastClockEmployeeId("");
+    setLastPin("");
+    setLastRole("");
   };
 
   const handlePinInput = (digit: string) => {
-    if (isConfirming) {
-      if (confirmPin.length < 4) setConfirmPin(confirmPin + digit);
-    } else {
-      if (pin.length < 4) setPin(pin + digit);
-    }
+    if (pin.length < 4) setPin(pin + digit);
   };
 
-  const backspace = () => {
-    if (isConfirming) {
-      setConfirmPin(confirmPin.slice(0, -1));
-    } else {
-      setPin(pin.slice(0, -1));
-    }
-  };
-
-  const clearPin = () => {
-    if (isConfirming) {
-      setConfirmPin("");
-    } else {
-      setPin("");
-    }
-  };
-
-  const handleSetPin = async () => {
-    if (!isConfirming) {
-      if (pin.length !== 4) return;
-      setIsConfirming(true);
-      return;
-    }
-
-    if (confirmPin !== pin) {
-      toast.error("PINs don't match. Try again.");
-      setConfirmPin("");
-      setIsConfirming(false);
-      setPin("");
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-      const res = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/set-clock-pin`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ clock_employee_id: selectedEmployee!.id, pin }),
-        }
-      );
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
-
-      toast.success("PIN set successfully! You can now clock in.");
-      // Update local state
-      setSelectedEmployee({ ...selectedEmployee!, pin_code: pin });
-      setPin("");
-      setConfirmPin("");
-      setIsConfirming(false);
-      setStep("enter-pin");
-      fetchEmployees();
-    } catch (error: any) {
-      toast.error(error.message || "Failed to set PIN");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const backspace = () => setPin(pin.slice(0, -1));
+  const clearPin = () => setPin("");
 
   const handleClockAction = async () => {
-    if (pin.length !== 4 || !selectedEmployee) return;
+    if (pin.length !== 4) return;
     setLoading(true);
     try {
       const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
@@ -160,13 +63,16 @@ const Index = () => {
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ clock_employee_id: selectedEmployee.id, pin }),
+          body: JSON.stringify({ pin }),
         }
       );
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
       setEmployeeName(data.employee_name);
+      setLastClockEmployeeId(data.clock_employee_id);
+      setLastPin(pin);
+      setLastRole(data.role);
 
       if (data.action === "clock_in") {
         setLastAction("in");
@@ -178,8 +84,7 @@ const Index = () => {
         toast.success(`${data.employee_name} clocked out — ${data.hours_worked}h`);
       }
 
-      // If promoted, show action choice; otherwise show result
-      if (data.role === "manager" || data.role === "shift_lead") {
+      if (data.role === "manager" || data.role === "shift_lead" || data.role === "owner") {
         setStep("action-choice");
       } else {
         setStep("result");
@@ -192,25 +97,8 @@ const Index = () => {
     }
   };
 
-  const handlePinSubmitForPromoted = async () => {
-    if (pin.length !== 4 || !selectedEmployee) return;
-    if (selectedEmployee.role === "employee") {
-      // Basic employees just clock in/out
-      await handleClockAction();
-      return;
-    }
-    // Promoted employees: validate PIN first, then show action choice
-    setLoading(true);
-    try {
-      // Validate PIN by trying clock-action (it validates PIN)
-      await handleClockAction();
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleOpenDashboard = async () => {
-    if (!selectedEmployee) return;
+    if (!lastClockEmployeeId) return;
     setLoading(true);
     try {
       const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
@@ -219,13 +107,12 @@ const Index = () => {
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ clock_employee_id: selectedEmployee.id, pin }),
+          body: JSON.stringify({ clock_employee_id: lastClockEmployeeId, pin: lastPin }),
         }
       );
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
-      // Set the session in Supabase client
       await supabase.auth.setSession({
         access_token: data.session.access_token,
         refresh_token: data.session.refresh_token,
@@ -240,7 +127,38 @@ const Index = () => {
     }
   };
 
-  const currentPin = isConfirming ? confirmPin : pin;
+  const handleInventoryAccess = async () => {
+    if (pin.length !== 4) return;
+    setLoading(true);
+    try {
+      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const res = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/pin-login`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ pin, require_permission: "inventory" }),
+        }
+      );
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+
+      await supabase.auth.setSession({
+        access_token: data.session.access_token,
+        refresh_token: data.session.refresh_token,
+      });
+
+      toast.success(`Welcome, ${data.employee_name}!`);
+      navigate("/dashboard/inventory");
+    } catch (error: any) {
+      toast.error(error.message || "Access denied");
+      setPin("");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const promptText = step === "inventory-pin" ? "Enter Manager PIN for Inventory" : "Enter Your PIN";
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-primary via-primary to-[hsl(215,80%,22%)] flex flex-col">
@@ -256,11 +174,11 @@ const Index = () => {
           </div>
         </div>
         <div className="text-right">
-          <p className="text-3xl font-mono font-bold text-primary-foreground tabular-nums">
+          <p className="text-4xl font-mono font-bold text-primary-foreground tabular-nums">
             {currentTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
           </p>
-          <p className="text-xs text-primary-foreground/50 font-medium">
-            {currentTime.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" })}
+          <p className="text-sm text-primary-foreground/50 font-medium">
+            {currentTime.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
           </p>
         </div>
       </header>
@@ -269,84 +187,26 @@ const Index = () => {
       <div className="flex-1 flex items-center justify-center p-6">
         <div className="w-full max-w-sm">
 
-          {/* Step: Select Employee */}
-          {step === "select" && (
-            <div className="space-y-4">
-              <p className="text-primary-foreground/60 text-sm font-semibold tracking-widest uppercase text-center">
-                Select Your Name
-              </p>
-              <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-1">
-                {employees.map((emp) => (
-                  <button
-                    key={emp.id}
-                    onClick={() => handleSelectEmployee(emp)}
-                    className="w-full text-left px-5 py-4 rounded-xl bg-primary-foreground/10 hover:bg-primary-foreground/20 active:scale-[0.98] transition-all border border-primary-foreground/5 flex items-center justify-between group"
-                  >
-                    <span className="text-primary-foreground font-semibold text-base">{emp.display_name || emp.full_name}</span>
-                    <ArrowRight className="h-4 w-4 text-primary-foreground/30 group-hover:text-primary-foreground/60 transition-colors" />
-                  </button>
-                ))}
-                {employees.length === 0 && (
-                  <p className="text-primary-foreground/40 text-center py-12 text-sm">No employees added yet</p>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Step: Set PIN (first time) */}
-          {step === "set-pin" && (
+          {/* PIN Entry (clock or inventory) */}
+          {(step === "pin" || step === "inventory-pin") && (
             <div className="space-y-6">
-              <div className="flex items-center gap-2">
-                <button onClick={resetToStart} className="text-primary-foreground/50 hover:text-primary-foreground/80">
-                  <ChevronLeft className="h-5 w-5" />
+              {step === "inventory-pin" && (
+                <button
+                  onClick={resetToStart}
+                  className="text-primary-foreground/50 hover:text-primary-foreground/80 text-sm font-medium"
+                >
+                  ← Back to Clock
                 </button>
-                <p className="text-primary-foreground font-semibold">{selectedEmployee?.full_name}</p>
-              </div>
+              )}
               <div className="text-center space-y-5">
                 <p className="text-primary-foreground/60 text-sm font-semibold tracking-widest uppercase">
-                  {isConfirming ? "Confirm Your PIN" : "Create Your 4-Digit PIN"}
+                  {promptText}
                 </p>
                 <div className="flex justify-center gap-4">
                   {Array.from({ length: 4 }, (_, i) => (
                     <div
                       key={i}
-                      className={`h-4 w-4 rounded-full transition-all duration-200 ${
-                        i < currentPin.length ? "bg-secondary scale-125 shadow-md shadow-secondary/40" : "bg-primary-foreground/20"
-                      }`}
-                    />
-                  ))}
-                </div>
-              </div>
-              <PinPad onInput={handlePinInput} onClear={clearPin} onBackspace={backspace} />
-              <Button
-                size="lg"
-                className="w-full h-14 text-base font-bold rounded-xl shadow-lg bg-secondary hover:bg-secondary/90 text-secondary-foreground"
-                onClick={handleSetPin}
-                disabled={currentPin.length !== 4 || loading}
-              >
-                {loading ? <Spinner /> : isConfirming ? "Confirm PIN" : "Next"}
-              </Button>
-            </div>
-          )}
-
-          {/* Step: Enter PIN */}
-          {step === "enter-pin" && (
-            <div className="space-y-6">
-              <div className="flex items-center gap-2">
-                <button onClick={resetToStart} className="text-primary-foreground/50 hover:text-primary-foreground/80">
-                  <ChevronLeft className="h-5 w-5" />
-                </button>
-                <p className="text-primary-foreground font-semibold">{selectedEmployee?.full_name}</p>
-              </div>
-              <div className="text-center space-y-5">
-                <p className="text-primary-foreground/60 text-sm font-semibold tracking-widest uppercase">
-                  Enter Your PIN
-                </p>
-                <div className="flex justify-center gap-4">
-                  {Array.from({ length: 4 }, (_, i) => (
-                    <div
-                      key={i}
-                      className={`h-4 w-4 rounded-full transition-all duration-200 ${
+                      className={`h-5 w-5 rounded-full transition-all duration-200 ${
                         i < pin.length ? "bg-secondary scale-125 shadow-md shadow-secondary/40" : "bg-primary-foreground/20"
                       }`}
                     />
@@ -354,22 +214,46 @@ const Index = () => {
                 </div>
               </div>
               <PinPad onInput={handlePinInput} onClear={clearPin} onBackspace={backspace} />
-              <Button
-                size="lg"
-                className="w-full h-14 text-base font-bold rounded-xl shadow-lg bg-secondary hover:bg-secondary/90 text-secondary-foreground"
-                onClick={handleClockAction}
-                disabled={pin.length !== 4 || loading}
-              >
-                {loading ? <Spinner /> : (
-                  <span className="flex items-center gap-2">
-                    Clock In / Out <ArrowRight className="h-4 w-4" />
-                  </span>
-                )}
-              </Button>
+
+              {step === "pin" ? (
+                <div className="space-y-3">
+                  <Button
+                    size="lg"
+                    className="w-full h-16 text-lg font-bold rounded-xl shadow-lg bg-secondary hover:bg-secondary/90 text-secondary-foreground"
+                    onClick={handleClockAction}
+                    disabled={pin.length !== 4 || loading}
+                  >
+                    {loading ? <Spinner /> : "Clock In / Out"}
+                  </Button>
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="w-full h-14 text-base font-bold rounded-xl border-primary-foreground/20 bg-primary-foreground/5 hover:bg-primary-foreground/10 text-primary-foreground"
+                    onClick={() => { setPin(""); setStep("inventory-pin"); }}
+                  >
+                    <Package className="h-5 w-5 mr-2" />
+                    Inventory
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  size="lg"
+                  className="w-full h-16 text-lg font-bold rounded-xl shadow-lg bg-secondary hover:bg-secondary/90 text-secondary-foreground"
+                  onClick={handleInventoryAccess}
+                  disabled={pin.length !== 4 || loading}
+                >
+                  {loading ? <Spinner /> : (
+                    <span className="flex items-center gap-2">
+                      <Package className="h-5 w-5" />
+                      Open Inventory
+                    </span>
+                  )}
+                </Button>
+              )}
             </div>
           )}
 
-          {/* Step: Action Choice (promoted employees after clock action) */}
+          {/* Action Choice (promoted employees after clock action) */}
           {step === "action-choice" && (
             <Card className="border-0 shadow-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-300">
               <CardContent className={`p-8 text-center ${
@@ -425,7 +309,7 @@ const Index = () => {
             </Card>
           )}
 
-          {/* Step: Result (basic employees) */}
+          {/* Result (basic employees) */}
           {step === "result" && (
             <Card className="border-0 shadow-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-300">
               <CardContent className={`p-8 text-center ${
