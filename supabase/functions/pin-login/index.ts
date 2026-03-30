@@ -86,7 +86,14 @@ Deno.serve(async (req) => {
 
     // If a specific permission is required, check it
     if (require_permission) {
-      const isOwnerOrManager = employee.role === "owner" || employee.role === "manager";
+      // Check user_roles table for owner/manager role (authoritative source)
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", employee.linked_user_id);
+
+      const userRoles = (roles || []).map((r: any) => r.role);
+      const isOwnerOrManager = userRoles.includes("owner") || userRoles.includes("manager");
 
       if (!isOwnerOrManager) {
         // Check employee_permissions table
