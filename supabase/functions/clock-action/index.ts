@@ -11,10 +11,12 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { clock_employee_id, pin } = await req.json();
+    const body = await req.json();
+    const pin = body.pin;
+    const clock_employee_id = body.clock_employee_id; // optional for backward compat
 
-    if (!clock_employee_id || !pin) {
-      return new Response(JSON.stringify({ error: "Missing clock_employee_id or pin" }), {
+    if (!pin) {
+      return new Response(JSON.stringify({ error: "Missing pin" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -32,33 +34,67 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Validate PIN
-    const { data: employee, error: fetchError } = await supabase
-      .from("clock_employees")
-      .select("id, full_name, pin_code, role, linked_user_id")
-      .eq("id", clock_employee_id)
-      .eq("is_active", true)
-      .single();
+    let employee: any;
 
-    if (fetchError || !employee) {
-      return new Response(JSON.stringify({ error: "Employee not found" }), {
-        status: 404,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    if (clock_employee_id) {
+      // Legacy: lookup by ID + PIN
+      const { data, error } = await supabase
+        .from("clock_employees")
+        .select("id, full_name, pin_code, role, linked_user_id")
+        .eq("id", clock_employee_id)
+        .eq("is_active", true)
+        .single();
 
-    if (employee.pin_code !== pin) {
-      return new Response(JSON.stringify({ error: "Invalid PIN" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      if (error || !data) {
+        return new Response(JSON.stringify({ error: "Employee not found" }), {
+          status: 404,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      if (data.pin_code !== pin) {
+        return new Response(JSON.stringify({ error: "Invalid PIN" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      employee = data;
+    } else {
+      // PIN-only lookup
+      const { data, error } = await supabase
+        .from("clock_employees")
+        .select("id, full_name, pin_code, role, linked_user_id")
+        .eq("pin_code", pin)
+        .eq("is_active", true);
+
+      if (error) {
+        return new Response(JSON.stringify({ error: "Lookup failed" }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      if (!data || data.length === 0) {
+        return new Response(JSON.stringify({ error: "Invalid PIN" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      if (data.length > 1) {
+        return new Response(JSON.stringify({ error: "PIN conflict. Contact your manager." }), {
+          status: 409,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      employee = data[0];
     }
 
     // Check for active time entry
     const { data: activeEntry } = await supabase
       .from("time_entries")
       .select("*")
-      .eq("clock_employee_id", clock_employee_id)
+      .eq("clock_employee_id", employee.id)
       .is("clock_out", null)
       .order("clock_in", { ascending: false })
       .limit(1)
@@ -81,6 +117,7 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({
         action: "clock_out",
         employee_name: employee.full_name,
+        clock_employee_id: employee.id,
         role: employee.role,
         hours_worked: hoursWorked,
         clock_out: clockOut,
@@ -88,14 +125,14 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     } else {
-      // Clock in - use linked_user_id for employee_id FK, fall back to clock_employee_id
+      // Clock in
       const profileId = employee.linked_user_id || null;
       const clockIn = new Date().toISOString();
       const { data: newEntry, error: insertError } = await supabase
         .from("time_entries")
         .insert({
           employee_id: profileId,
-          clock_employee_id: clock_employee_id,
+          clock_employee_id: employee.id,
           clock_in: clockIn,
           clock_in_location: "Augusta, GA",
         })
@@ -107,6 +144,7 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({
         action: "clock_in",
         employee_name: employee.full_name,
+        clock_employee_id: employee.id,
         role: employee.role,
         clock_in: clockIn,
         entry_id: newEntry.id,
