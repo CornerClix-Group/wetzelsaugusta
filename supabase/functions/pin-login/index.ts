@@ -87,23 +87,34 @@ Deno.serve(async (req) => {
     // If a specific permission is required, check it
     if (require_permission) {
       // Check user_roles table for owner/manager role (authoritative source)
-      const { data: roles } = await supabase
+      const { data: roles, error: rolesError } = await supabase
         .from("user_roles")
         .select("role")
         .eq("user_id", employee.linked_user_id);
+
+      console.log("Permission check debug:", {
+        linked_user_id: employee.linked_user_id,
+        clock_employee_id: employee.id,
+        employee_role: employee.role,
+        roles_data: roles,
+        roles_error: rolesError,
+        require_permission,
+      });
 
       const userRoles = (roles || []).map((r: any) => r.role);
       const isOwnerOrManager = userRoles.includes("owner") || userRoles.includes("manager");
 
       if (!isOwnerOrManager) {
         // Check employee_permissions table
-        const { data: perm } = await supabase
+        const { data: perm, error: permError } = await supabase
           .from("employee_permissions")
           .select("granted")
           .eq("clock_employee_id", employee.id)
           .eq("permission", require_permission)
           .eq("granted", true)
           .maybeSingle();
+
+        console.log("Permission table check:", { perm, permError });
 
         if (!perm) {
           return new Response(JSON.stringify({ error: "Access denied. You do not have permission." }), {
