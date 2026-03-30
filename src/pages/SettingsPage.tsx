@@ -112,10 +112,14 @@ const SettingsPage = () => {
             Timesheet Email Recipients
           </CardTitle>
           <CardDescription>
-            Auto-generated weekly timesheets will be emailed to these addresses
+            Auto-generated weekly timesheets will be emailed to these addresses every Monday at 6:00 AM ET
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          <Button onClick={sendReportNow} disabled={sendingReport || recipients.length === 0} variant="outline" className="w-full">
+            {sendingReport ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+            {sendingReport ? "Sending..." : "Send Report Now (Last 7 Days)"}
+          </Button>
           <div className="space-y-2">
             {recipients.map((r: any) => (
               <div key={r.id} className="flex items-center justify-between p-3 bg-muted rounded-lg">
