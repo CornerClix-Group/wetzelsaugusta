@@ -1,0 +1,1 @@
+ALTER TABLE public.time_entries ALTER COLUMN employee_id DROP NOT NULL;
