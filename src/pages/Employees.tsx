@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Users, RotateCcw, Plus, ArrowUpCircle, ArrowDownCircle, UserX, Trash2, Briefcase, Mail, FileText, Send, Pencil, Shield } from "lucide-react";
+import { Users, RotateCcw, Plus, ArrowUpCircle, ArrowDownCircle, UserX, Trash2, Briefcase, Mail, FileText, Send, Pencil, Shield, KeyRound } from "lucide-react";
 import { toast } from "sonner";
 
 const ROLE_LABELS: Record<string, { label: string; className: string }> = {
