@@ -724,6 +724,61 @@ const Employees = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Set PIN Dialog */}
+      <Dialog open={setPinDialog.open} onOpenChange={(open) => setSetPinDialog({ open, employee: open ? setPinDialog.employee : null })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Set PIN for {setPinDialog.employee?.full_name}</DialogTitle>
+            <DialogDescription>
+              Enter a 4-digit PIN for this employee to use on the time clock terminal.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label>4-Digit PIN</Label>
+            <Input
+              type="text"
+              inputMode="numeric"
+              pattern="\d{4}"
+              maxLength={4}
+              placeholder="e.g. 1234"
+              value={newPin}
+              onChange={(e) => setNewPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
+              className="text-center text-2xl tracking-widest"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSetPinDialog({ open: false, employee: null })}>Cancel</Button>
+            <Button
+              onClick={async () => {
+                if (!setPinDialog.employee || !/^\d{4}$/.test(newPin)) {
+                  toast.error("Please enter a valid 4-digit PIN");
+                  return;
+                }
+                setSaving(true);
+                try {
+                  const { error } = await supabase
+                    .from("clock_employees")
+                    .update({ pin_code: newPin })
+                    .eq("id", setPinDialog.employee.id);
+                  if (error) throw error;
+                  toast.success(`PIN set for ${setPinDialog.employee.full_name}`);
+                  setSetPinDialog({ open: false, employee: null });
+                  setNewPin("");
+                  fetchData();
+                } catch (error: any) {
+                  toast.error(error.message || "Failed to set PIN");
+                } finally {
+                  setSaving(false);
+                }
+              }}
+              disabled={saving || newPin.length !== 4}
+            >
+              {saving ? "Saving..." : "Set PIN"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Send HR Invite Dialog */}
       <Dialog open={hrInviteDialog.open} onOpenChange={(open) => setHrInviteDialog({ open, employee: open ? hrInviteDialog.employee : null })}>
         <DialogContent>
