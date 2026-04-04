@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Users, RotateCcw, Plus, ArrowUpCircle, ArrowDownCircle, UserX, Trash2, Briefcase, Mail, FileText, Send, Pencil, Shield } from "lucide-react";
+import { Users, RotateCcw, Plus, ArrowUpCircle, ArrowDownCircle, UserX, Trash2, Briefcase, Mail, FileText, Send, Pencil, Shield, KeyRound } from "lucide-react";
 import { toast } from "sonner";
 
 const ROLE_LABELS: Record<string, { label: string; className: string }> = {
@@ -57,6 +57,10 @@ const Employees = () => {
   // Permissions dialog
   const [permDialog, setPermDialog] = useState<{ open: boolean; employee: any | null }>({ open: false, employee: null });
   const [permToggles, setPermToggles] = useState<Record<string, boolean>>({});
+
+  // Set PIN dialog
+  const [setPinDialog, setSetPinDialog] = useState<{ open: boolean; employee: any | null }>({ open: false, employee: null });
+  const [newPin, setNewPin] = useState("");
 
   useEffect(() => {
     fetchData();
@@ -426,10 +430,22 @@ const Employees = () => {
                   <Shield className="h-3.5 w-3.5 mr-1" />
                   Permissions
                 </Button>
-                {emp.pin_code && (
+                {emp.pin_code ? (
                   <Button size="sm" variant="outline" onClick={() => handleResetPin(emp)}>
                     <RotateCcw className="h-3.5 w-3.5 mr-1" />
                     Reset PIN
+                  </Button>
+                ) : (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setSetPinDialog({ open: true, employee: emp });
+                      setNewPin("");
+                    }}
+                  >
+                    <KeyRound className="h-3.5 w-3.5 mr-1" />
+                    Set PIN
                   </Button>
                 )}
                 {emp.role === "employee" && (
@@ -703,6 +719,61 @@ const Employees = () => {
             <Button variant="outline" onClick={() => setRemoveBMDialog({ open: false, manager: null })}>Cancel</Button>
             <Button variant="destructive" onClick={handleRemoveBM} disabled={saving}>
               {saving ? "Removing..." : "Remove"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Set PIN Dialog */}
+      <Dialog open={setPinDialog.open} onOpenChange={(open) => setSetPinDialog({ open, employee: open ? setPinDialog.employee : null })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Set PIN for {setPinDialog.employee?.full_name}</DialogTitle>
+            <DialogDescription>
+              Enter a 4-digit PIN for this employee to use on the time clock terminal.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label>4-Digit PIN</Label>
+            <Input
+              type="text"
+              inputMode="numeric"
+              pattern="\d{4}"
+              maxLength={4}
+              placeholder="e.g. 1234"
+              value={newPin}
+              onChange={(e) => setNewPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
+              className="text-center text-2xl tracking-widest"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSetPinDialog({ open: false, employee: null })}>Cancel</Button>
+            <Button
+              onClick={async () => {
+                if (!setPinDialog.employee || !/^\d{4}$/.test(newPin)) {
+                  toast.error("Please enter a valid 4-digit PIN");
+                  return;
+                }
+                setSaving(true);
+                try {
+                  const { error } = await supabase
+                    .from("clock_employees")
+                    .update({ pin_code: newPin })
+                    .eq("id", setPinDialog.employee.id);
+                  if (error) throw error;
+                  toast.success(`PIN set for ${setPinDialog.employee.full_name}`);
+                  setSetPinDialog({ open: false, employee: null });
+                  setNewPin("");
+                  fetchData();
+                } catch (error: any) {
+                  toast.error(error.message || "Failed to set PIN");
+                } finally {
+                  setSaving(false);
+                }
+              }}
+              disabled={saving || newPin.length !== 4}
+            >
+              {saving ? "Saving..." : "Set PIN"}
             </Button>
           </DialogFooter>
         </DialogContent>
