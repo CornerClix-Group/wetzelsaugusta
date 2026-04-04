@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import AppLoadingScreen from "@/components/AppLoadingScreen";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
@@ -42,6 +42,14 @@ const App = () => (
               <Route path="schedule" element={<Schedule />} />
               <Route path="settings" element={<SettingsPage />} />
             </Route>
+            <Route path="/timeclock" element={<Navigate to="/dashboard/timeclock" replace />} />
+            <Route path="/compliance" element={<Navigate to="/dashboard/compliance" replace />} />
+            <Route path="/inventory" element={<Navigate to="/dashboard/inventory" replace />} />
+            <Route path="/hr-onboarding" element={<Navigate to="/dashboard/hr-onboarding" replace />} />
+            <Route path="/trucks" element={<Navigate to="/dashboard/trucks" replace />} />
+            <Route path="/employees" element={<Navigate to="/dashboard/employees" replace />} />
+            <Route path="/schedule" element={<Navigate to="/dashboard/schedule" replace />} />
+            <Route path="/settings" element={<Navigate to="/dashboard/settings" replace />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
