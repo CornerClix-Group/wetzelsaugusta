@@ -430,10 +430,22 @@ const Employees = () => {
                   <Shield className="h-3.5 w-3.5 mr-1" />
                   Permissions
                 </Button>
-                {emp.pin_code && (
+                {emp.pin_code ? (
                   <Button size="sm" variant="outline" onClick={() => handleResetPin(emp)}>
                     <RotateCcw className="h-3.5 w-3.5 mr-1" />
                     Reset PIN
+                  </Button>
+                ) : (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setSetPinDialog({ open: true, employee: emp });
+                      setNewPin("");
+                    }}
+                  >
+                    <KeyRound className="h-3.5 w-3.5 mr-1" />
+                    Set PIN
                   </Button>
                 )}
                 {emp.role === "employee" && (
