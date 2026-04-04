@@ -58,6 +58,10 @@ const Employees = () => {
   const [permDialog, setPermDialog] = useState<{ open: boolean; employee: any | null }>({ open: false, employee: null });
   const [permToggles, setPermToggles] = useState<Record<string, boolean>>({});
 
+  // Set PIN dialog
+  const [setPinDialog, setSetPinDialog] = useState<{ open: boolean; employee: any | null }>({ open: false, employee: null });
+  const [newPin, setNewPin] = useState("");
+
   useEffect(() => {
     fetchData();
   }, []);
