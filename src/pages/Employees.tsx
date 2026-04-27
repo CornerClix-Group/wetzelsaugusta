@@ -411,6 +411,18 @@ const Employees = () => {
                   </Badge>
                   {emp.pin_code && <Badge variant="outline">PIN set</Badge>}
                   {emp.linked_user_id && <Badge variant="outline">Dashboard access</Badge>}
+                  {emp.hourly_rate_cents > 0 ? (
+                    <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200">
+                      ${(emp.hourly_rate_cents / 100).toFixed(2)}/hr
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">No rate</Badge>
+                  )}
+                  {emp.minimum_per_period_cents > 0 && (
+                    <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+                      Min ${(emp.minimum_per_period_cents / 100).toFixed(0)}/wk
+                    </Badge>
+                  )}
                 </div>
               </div>
             </CardHeader>
