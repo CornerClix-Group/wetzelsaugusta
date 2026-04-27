@@ -90,10 +90,13 @@ export type Database = {
         Row: {
           created_at: string
           display_name: string | null
+          email: string | null
           full_name: string
+          hourly_rate_cents: number
           id: string
           is_active: boolean
           linked_user_id: string | null
+          minimum_per_period_cents: number
           pin_code: string | null
           role: string
           updated_at: string
@@ -101,10 +104,13 @@ export type Database = {
         Insert: {
           created_at?: string
           display_name?: string | null
+          email?: string | null
           full_name: string
+          hourly_rate_cents?: number
           id?: string
           is_active?: boolean
           linked_user_id?: string | null
+          minimum_per_period_cents?: number
           pin_code?: string | null
           role?: string
           updated_at?: string
@@ -112,10 +118,13 @@ export type Database = {
         Update: {
           created_at?: string
           display_name?: string | null
+          email?: string | null
           full_name?: string
+          hourly_rate_cents?: number
           id?: string
           is_active?: boolean
           linked_user_id?: string | null
+          minimum_per_period_cents?: number
           pin_code?: string | null
           role?: string
           updated_at?: string

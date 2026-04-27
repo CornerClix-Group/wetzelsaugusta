@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Users, RotateCcw, Plus, ArrowUpCircle, ArrowDownCircle, UserX, Trash2, Briefcase, Mail, FileText, Send, Pencil, Shield, KeyRound } from "lucide-react";
+import { Users, RotateCcw, Plus, ArrowUpCircle, ArrowDownCircle, UserX, Trash2, Briefcase, Mail, FileText, Send, Pencil, Shield, KeyRound, DollarSign } from "lucide-react";
 import { toast } from "sonner";
 
 const ROLE_LABELS: Record<string, { label: string; className: string }> = {
@@ -61,6 +61,12 @@ const Employees = () => {
   // Set PIN dialog
   const [setPinDialog, setSetPinDialog] = useState<{ open: boolean; employee: any | null }>({ open: false, employee: null });
   const [newPin, setNewPin] = useState("");
+
+  // Pay dialog
+  const [payDialog, setPayDialog] = useState<{ open: boolean; employee: any | null }>({ open: false, employee: null });
+  const [payRate, setPayRate] = useState(""); // dollars
+  const [payMinimum, setPayMinimum] = useState(""); // dollars
+  const [payEmail, setPayEmail] = useState("");
 
   useEffect(() => {
     fetchData();
@@ -405,6 +411,18 @@ const Employees = () => {
                   </Badge>
                   {emp.pin_code && <Badge variant="outline">PIN set</Badge>}
                   {emp.linked_user_id && <Badge variant="outline">Dashboard access</Badge>}
+                  {emp.hourly_rate_cents > 0 ? (
+                    <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200">
+                      ${(emp.hourly_rate_cents / 100).toFixed(2)}/hr
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">No rate</Badge>
+                  )}
+                  {emp.minimum_per_period_cents > 0 && (
+                    <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+                      Min ${(emp.minimum_per_period_cents / 100).toFixed(0)}/wk
+                    </Badge>
+                  )}
                 </div>
               </div>
             </CardHeader>
@@ -421,6 +439,19 @@ const Employees = () => {
                 >
                   <Pencil className="h-3.5 w-3.5 mr-1" />
                   Edit
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setPayDialog({ open: true, employee: emp });
+                    setPayRate(emp.hourly_rate_cents > 0 ? (emp.hourly_rate_cents / 100).toFixed(2) : "");
+                    setPayMinimum(emp.minimum_per_period_cents > 0 ? (emp.minimum_per_period_cents / 100).toFixed(2) : "");
+                    setPayEmail(emp.email || "");
+                  }}
+                >
+                  <DollarSign className="h-3.5 w-3.5 mr-1" />
+                  Pay
                 </Button>
                 <Button
                   size="sm"
@@ -823,6 +854,89 @@ const Employees = () => {
               disabled={saving || !hrInviteEmail.trim()}
             >
               {saving ? "Sending..." : "Send Invite"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Pay Dialog */}
+      <Dialog open={payDialog.open} onOpenChange={(open) => setPayDialog({ open, employee: open ? payDialog.employee : null })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Pay settings: {payDialog.employee?.full_name}</DialogTitle>
+            <DialogDescription>
+              Hourly rate is what they earn per clocked hour. Weekly minimum is a guarantee:
+              if hours × rate is less than the minimum, they get paid the minimum.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Hourly rate (USD)</Label>
+              <Input
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="e.g. 15.00"
+                value={payRate}
+                onChange={(e) => setPayRate(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Weekly minimum (USD) — optional</Label>
+              <Input
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="0.00 (no minimum)"
+                value={payMinimum}
+                onChange={(e) => setPayMinimum(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">Leave at 0 if this employee has no guaranteed minimum.</p>
+            </div>
+            <div className="space-y-2">
+              <Label>Email (optional)</Label>
+              <Input
+                type="email"
+                placeholder="employee@example.com"
+                value={payEmail}
+                onChange={(e) => setPayEmail(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPayDialog({ open: false, employee: null })}>Cancel</Button>
+            <Button
+              onClick={async () => {
+                if (!payDialog.employee) return;
+                const rateCents = Math.round(parseFloat(payRate || "0") * 100);
+                const minCents = Math.round(parseFloat(payMinimum || "0") * 100);
+                if (isNaN(rateCents) || rateCents < 0 || isNaN(minCents) || minCents < 0) {
+                  toast.error("Enter valid amounts");
+                  return;
+                }
+                setSaving(true);
+                try {
+                  const { error } = await supabase
+                    .from("clock_employees")
+                    .update({
+                      hourly_rate_cents: rateCents,
+                      minimum_per_period_cents: minCents,
+                      email: payEmail.trim() || null,
+                    })
+                    .eq("id", payDialog.employee.id);
+                  if (error) throw error;
+                  toast.success("Pay settings saved");
+                  setPayDialog({ open: false, employee: null });
+                  fetchData();
+                } catch (error: any) {
+                  toast.error(error.message || "Failed to save");
+                } finally {
+                  setSaving(false);
+                }
+              }}
+              disabled={saving}
+            >
+              {saving ? "Saving..." : "Save"}
             </Button>
           </DialogFooter>
         </DialogContent>
