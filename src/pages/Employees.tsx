@@ -443,6 +443,19 @@ const Employees = () => {
                 <Button
                   size="sm"
                   variant="outline"
+                  onClick={() => {
+                    setPayDialog({ open: true, employee: emp });
+                    setPayRate(emp.hourly_rate_cents > 0 ? (emp.hourly_rate_cents / 100).toFixed(2) : "");
+                    setPayMinimum(emp.minimum_per_period_cents > 0 ? (emp.minimum_per_period_cents / 100).toFixed(2) : "");
+                    setPayEmail(emp.email || "");
+                  }}
+                >
+                  <DollarSign className="h-3.5 w-3.5 mr-1" />
+                  Pay
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
                   onClick={() => openPermDialog(emp)}
                 >
                   <Shield className="h-3.5 w-3.5 mr-1" />
