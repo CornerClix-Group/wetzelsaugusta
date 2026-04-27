@@ -858,6 +858,89 @@ const Employees = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Pay Dialog */}
+      <Dialog open={payDialog.open} onOpenChange={(open) => setPayDialog({ open, employee: open ? payDialog.employee : null })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Pay settings: {payDialog.employee?.full_name}</DialogTitle>
+            <DialogDescription>
+              Hourly rate is what they earn per clocked hour. Weekly minimum is a guarantee:
+              if hours × rate is less than the minimum, they get paid the minimum.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Hourly rate (USD)</Label>
+              <Input
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="e.g. 15.00"
+                value={payRate}
+                onChange={(e) => setPayRate(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Weekly minimum (USD) — optional</Label>
+              <Input
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="0.00 (no minimum)"
+                value={payMinimum}
+                onChange={(e) => setPayMinimum(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">Leave at 0 if this employee has no guaranteed minimum.</p>
+            </div>
+            <div className="space-y-2">
+              <Label>Email (optional)</Label>
+              <Input
+                type="email"
+                placeholder="employee@example.com"
+                value={payEmail}
+                onChange={(e) => setPayEmail(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPayDialog({ open: false, employee: null })}>Cancel</Button>
+            <Button
+              onClick={async () => {
+                if (!payDialog.employee) return;
+                const rateCents = Math.round(parseFloat(payRate || "0") * 100);
+                const minCents = Math.round(parseFloat(payMinimum || "0") * 100);
+                if (isNaN(rateCents) || rateCents < 0 || isNaN(minCents) || minCents < 0) {
+                  toast.error("Enter valid amounts");
+                  return;
+                }
+                setSaving(true);
+                try {
+                  const { error } = await supabase
+                    .from("clock_employees")
+                    .update({
+                      hourly_rate_cents: rateCents,
+                      minimum_per_period_cents: minCents,
+                      email: payEmail.trim() || null,
+                    })
+                    .eq("id", payDialog.employee.id);
+                  if (error) throw error;
+                  toast.success("Pay settings saved");
+                  setPayDialog({ open: false, employee: null });
+                  fetchData();
+                } catch (error: any) {
+                  toast.error(error.message || "Failed to save");
+                } finally {
+                  setSaving(false);
+                }
+              }}
+              disabled={saving}
+            >
+              {saving ? "Saving..." : "Save"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
