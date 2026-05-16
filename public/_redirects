@@ -1,0 +1,4 @@
+# SPA fallback — every unmatched request returns index.html with HTTP 200
+# so React Router can handle the path client-side.
+# Used by Netlify, Cloudflare Pages, and Lovable's static hosting.
+/*  /index.html  200

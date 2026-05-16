@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Wetzels of Augusta</title>
+    <!--
+      GitHub Pages doesn't support real SPA rewrites. When the server sends
+      this 404 page, we hand control back to React Router by redirecting
+      to the root with the original path stashed in the URL hash. Then
+      a tiny snippet in index.html (see below) reads it back and pushes
+      it into the History API on load.
+
+      This file is only needed if you ever deploy to GitHub Pages. On
+      Netlify/Vercel/Cloudflare/Lovable, the _redirects or vercel.json
+      handles it server-side and this file is harmless dead weight.
+    -->
+    <script>
+      (function () {
+        var path = window.location.pathname + window.location.search;
+        window.location.replace(
+          window.location.origin + "/?spa-redirect=" + encodeURIComponent(path)
+        );
+      })();
+    </script>
+  </head>
+  <body></body>
+</html>

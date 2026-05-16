@@ -19,13 +19,39 @@ export default defineConfig(({ mode }) => ({
       },
       workbox: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
-        navigateFallbackDenylist: [/^\/~oauth/],
+        navigateFallbackDenylist: [
+          /^\/~oauth/,
+          // Never SPA-fallback Supabase function URLs or other API calls
+          /^\/functions\//,
+          /^\/rest\//,
+          /^\/auth\/v1\//,
+        ],
         runtimeCaching: [
           {
+            // Supabase Edge Functions — these are POSTs that mutate state
+            // (clock-in, pin-login). They must NEVER be served from cache.
+            urlPattern: /^https:\/\/.*\.supabase\.co\/functions\/v1\/.*/i,
+            handler: "NetworkOnly",
+            options: {
+              cacheName: "supabase-functions",
+            },
+          },
+          {
+            // Auth endpoints — also NetworkOnly. Stale sessions = wrong user.
+            urlPattern: /^https:\/\/.*\.supabase\.co\/auth\/v1\/.*/i,
+            handler: "NetworkOnly",
+            options: {
+              cacheName: "supabase-auth",
+            },
+          },
+          {
+            // Everything else on Supabase (REST queries, storage) — fine to
+            // cache briefly so the app feels snappy on flaky tablet wifi.
             urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
             handler: "NetworkFirst",
             options: {
               cacheName: "supabase-api",
+              networkTimeoutSeconds: 5,
               expiration: { maxEntries: 50, maxAgeSeconds: 300 },
             },
           },
@@ -65,6 +91,24 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+    },
+  },
+  build: {
+    chunkSizeWarningLimit: 700,
+    rollupOptions: {
+      output: {
+        // Only split out Supabase. It's the single largest vendor (~165 KB
+        // minified) and changes rarely → good long-term cache target.
+        //
+        // We deliberately do NOT split React/Radix/recharts here: doing so
+        // pulls shared transitive helpers into crossing chunks and triggers
+        // Rollup's "Circular chunk" warning. Lazy-loaded routes + Vite's
+        // default chunk graph handle the rest.
+        manualChunks(id) {
+          if (id.includes("/@supabase/")) return "supabase-vendor";
+          return undefined;
+        },
+      },
     },
   },
 }));

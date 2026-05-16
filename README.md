@@ -4,6 +4,40 @@
 
 **URL**: https://lovable.dev/projects/2b2d6fcb-54fa-458a-95a8-b65ce8ab771d
 
+## Environment setup
+
+Copy `.env.example` to `.env` and fill in your Supabase project values.
+On any production host (Lovable, Vercel, Netlify, Cloudflare Pages), set
+the same three `VITE_SUPABASE_*` variables in the host's environment
+settings — they're baked into the bundle at build time. If any of them
+are missing, the app renders a clear configuration-error screen instead
+of going blank.
+
+## Deploy troubleshooting
+
+**The site loads on my laptop but is blank/broken on a tablet.**
+Almost always a stale service worker. Two ways to fix:
+
+- *Per device (manual):* Chrome DevTools → Application → Service Workers
+  → Unregister, then Application → Storage → Clear site data, reload.
+- *Globally (the right way):* bump `APP_KILLSWITCH_VERSION` in
+  `src/main.tsx` to a new value and redeploy. Every device clears its
+  SW and caches on next open.
+
+**The site shows "Configuration Error".**
+The deployed environment is missing one or more `VITE_SUPABASE_*` vars.
+The error screen lists which ones. Set them in the host's env panel and
+redeploy.
+
+**Deep links 404 on a new host.**
+Some static hosts need an SPA-rewrite file. This repo ships:
+- `public/_redirects` (Netlify, Cloudflare Pages, Lovable)
+- `vercel.json` (Vercel)
+- `public/404.html` + a snippet in `index.html` (GitHub Pages)
+
+If you're on a host not in that list, point unmatched paths to
+`/index.html` with a `200` (not `301/302`) status.
+
 ## How can I edit this code?
 
 There are several ways of editing your application.

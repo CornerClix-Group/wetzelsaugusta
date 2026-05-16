@@ -45,6 +45,17 @@
 
   <body>
     <div id="root"></div>
+    <script>
+      // Counterpart to public/404.html for GitHub Pages SPA support.
+      // If we landed here via the 404 fallback, restore the real path.
+      (function () {
+        var params = new URLSearchParams(window.location.search);
+        var target = params.get("spa-redirect");
+        if (target) {
+          window.history.replaceState(null, "", target);
+        }
+      })();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
